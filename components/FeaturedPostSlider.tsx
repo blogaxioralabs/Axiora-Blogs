@@ -14,6 +14,7 @@ interface Post {
     created_at: string;
     categories?: { name: string };
     content?: string;
+    category_id: number;
 }
 
 export function FeaturedPostSlider({ posts }: { posts: Post[] }) {
