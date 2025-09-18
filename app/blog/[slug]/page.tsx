@@ -41,9 +41,7 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   return (
-    // <> fragment එකක් යොදාගෙන section දෙකකට කඩනවා
     <>
-        {/* මේ section එකේ තියෙන්නේ article එක විතරයි. ඒකට පළල අඩුයි. */}
         <div className="container max-w-4xl py-12">
             <ViewCounter postId={post.id} />
             <article>
@@ -102,7 +100,6 @@ export default async function PostPage({ params }: PostPageProps) {
             </article>
         </div>
 
-        {/* මේ අලුත් section එකේ Related Posts ටික දානවා. මේකට සම්පූර්ණ පළල තියෙනවා. */}
         <RelatedPosts currentPostId={post.id} />
     </>
   );

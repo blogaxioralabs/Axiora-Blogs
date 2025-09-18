@@ -1,35 +1,74 @@
-// components/SortDropdown.tsx
 'use client';
 
+import * as React from "react";
+import { Check, ChevronsUpDown, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SlidersHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface SortDropdownProps {
   options: { label: string; value: string }[];
   value: string;
-  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  onValueChange: (value: string) => void;
 }
 
-export function SortDropdown({ options, value, onChange }: SortDropdownProps) {
+export function SortDropdown({ options, value, onValueChange }: SortDropdownProps) {
+  const [open, setOpen] = React.useState(false);
+  
+  const selectedLabel = options.find((option) => option.value === value)?.label;
+
   return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={onChange}
-        className={cn(
-          "h-10 w-full cursor-pointer appearance-none rounded-md border border-input bg-background pl-10 pr-8 text-sm ring-offset-background",
-          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-        )}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-        <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-      </div>
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-[250px] justify-between rounded-full font-semibold"
+        >
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+            <span className="truncate">{selectedLabel || "Sort by..."}</span>
+          </div>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[250px] p-0">
+        <Command>
+          <CommandList>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.value}
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

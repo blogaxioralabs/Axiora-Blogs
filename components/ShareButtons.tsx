@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 
 export function ShareButtons({ title }: { title: string }) {
     const pathname = usePathname();
-    const url = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}${pathname}`;
+    const url = `https://axiora-blogs.vercel.app${pathname}`;
 
     const copyLink = () => {
         navigator.clipboard.writeText(url).then(() => {

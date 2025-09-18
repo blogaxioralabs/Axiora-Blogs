@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
+import Image from 'next/image';
 import { ArrowRight, UserCircle, CalendarDays, Heart } from 'lucide-react';
 
 interface Post {
@@ -45,11 +46,15 @@ export default function PostCard({ post }: { post: Post }) {
         >
             <div className="relative">
                 <Link href={`/blog/${post.slug}`} className="block aspect-video overflow-hidden">
-                    <img
-                        src={post.image_url}
-                        alt={post.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
+                    {post.image_url && (
+    <Image
+        src={post.image_url}
+        alt={post.title}
+        fill
+        className="object-cover transition-transform duration-300 group-hover:scale-105"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+    />
+)}
                 </Link>
                 {post.author_name && (
                     <div className="absolute top-3 right-3">

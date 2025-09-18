@@ -8,32 +8,7 @@ import { AnimatedPostCard } from '@/components/AnimatedPostCard';
 import { Pagination } from '@/components/Pagination';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { SortDropdown } from '@/components/SortDropdown';
-
-// Define types to match data structure
-type Post = {
-  id: number;
-  title: string;
-  slug: string;
-  image_url?: string;
-  created_at: string;
-  category_id: number;
-  sub_category_id?: number;
-  categories?: { name: string };
-  sub_categories?: { name: string, slug: string };
-  content?: string;
-  like_count?: number; // like_count එකතු කරන්න
-};
-
-type Category = {
-    id: number;
-    name: string;
-};
-
-type SubCategory = {
-    id: number;
-    name: string;
-    parent_category_id: number;
-};
+import type { Post, Category, SubCategory } from '@/lib/types';
 
 const POSTS_PER_PAGE = 9;
 
@@ -117,15 +92,14 @@ export default function BlogPageClient() {
 
   return (
     <div className="container py-12">
-      {/* --- Layout එක මෙතන වෙනස් කරනවා --- */}
       <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
         <h1 className="text-4xl font-bold">All Articles</h1>
 
-        {/* Filter ටික දකුණු පැත්තට දානවා */}
         <div className="flex flex-col sm:flex-row items-center gap-4">
             <SortDropdown
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                // onChange={(e) => setSortBy(e.target.value)} <-- මේ පේළිය වෙනුවට
+                onValueChange={setSortBy} // <-- මේ අලුත් පේළිය යොදන්න
                 options={[
                     { value: 'created_at,desc', label: 'Sort by: Latest' },
                     { value: 'created_at,asc', label: 'Sort by: Oldest' },
@@ -140,7 +114,7 @@ export default function BlogPageClient() {
             />
         </div>
       </div>
-      {/* --- Layout වෙනස් කිරීම මෙතනින් ඉවරයි --- */}
+
 
       {loading ? (
         <p className="text-center text-muted-foreground pt-10">Loading articles...</p>

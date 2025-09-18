@@ -4,14 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 
-// No longer need to pass categories here
 export function MobileNav() {
     const [isOpen, setIsOpen] = useState(false);
 
-    // Main navigation links
     const navLinks = [
         { name: 'Home', href: '/' },
         { name: 'Blog', href: '/blog' },
+        { name: 'News', href: '/news' }, 
         { name: 'About', href: '/about' },
     ];
 
