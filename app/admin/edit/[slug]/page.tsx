@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase } from '../../../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import slugify from 'slugify';
+import type { Post } from '@/lib/types';
 import dynamic from 'next/dynamic'; // <-- 1. Import dynamic
 
 // UI Components
@@ -14,8 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { UploadCloud, LoaderCircle, Image as ImageIcon, X, AlertCircle, PlusCircle } from 'lucide-react';
+import { UploadCloud, LoaderCircle, Image as ImageIcon, X, AlertCircle, PlusCircle, ArrowLeft } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+import Link from 'next/link';
 
 // Rich Text Editor (Markdown)
 import "easymde/dist/easymde.min.css";
@@ -24,15 +26,22 @@ import type { Options } from 'easymde';
 // <-- 2. Dynamically import the editor
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false });
 
-// Types
 type Category = { id: number; name: string; };
 type SubCategory = { id: number; name: string; parent_category_id: number; };
 
-export default function CreatePostPage() {
+type EditPostPageProps = {
+    params: {
+        slug: string;
+    };
+};
+
+export default function EditPostPage({ params }: EditPostPageProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [isLoading, setIsLoading] = useState(true);
 
     // Form state
+    const [post, setPost] = useState<Post | null>(null);
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [authorName, setAuthorName] = useState('');
@@ -67,15 +76,37 @@ export default function CreatePostPage() {
         };
     }, []);
 
+    // Fetch existing post data
     useEffect(() => {
-        async function fetchData() {
+        async function fetchPostAndCategories() {
+            setIsLoading(true);
+            const { data: postData } = await supabase
+                .from('posts')
+                .select('*, tags(name)')
+                .eq('slug', params.slug)
+                .single();
+
+            if (postData) {
+                setPost(postData);
+                setTitle(postData.title);
+                setContent(postData.content || '');
+                setAuthorName(postData.author_name || '');
+                setSelectedCategory(String(postData.category_id));
+                setSelectedSubCategory(String(postData.sub_category_id || ''));
+                setIsFeatured(postData.is_featured || false);
+                setImageUrl(postData.image_url || '');
+                setImagePreview(postData.image_url || null);
+                setTags(postData.tags?.map((t: { name: string }) => t.name) || []);
+            }
+
             const { data: catData } = await supabase.from('categories').select('id, name');
             const { data: subCatData } = await supabase.from('sub_categories').select('id, name, parent_category_id');
             setCategories(catData || []);
             setSubCategories(subCatData || []);
+            setIsLoading(false);
         }
-        fetchData();
-    }, []);
+        fetchPostAndCategories();
+    }, [params.slug]);
 
     useEffect(() => {
         const categoryId = parseInt(selectedCategory);
@@ -84,16 +115,12 @@ export default function CreatePostPage() {
         } else {
             setFilteredSubCategories([]);
         }
-        setSelectedSubCategory('');
     }, [selectedCategory, subCategories]);
 
     const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 10 * 1024 * 1024) { 
-                toast.error("Image size should be less than 10MB.");
-                return;
-            }
+            if (file.size > 10 * 1024 * 1024) { toast.error("Image size should be less than 10MB."); return; }
             setImageFile(file);
             setImageUrl('');
             const reader = new FileReader();
@@ -120,23 +147,13 @@ export default function CreatePostPage() {
             toast.error("Please select a main category and enter a name for the new sub-category.");
             return;
         }
-
         const parentCategoryName = categories.find(c => c.id === parentId)?.name || 'cat';
         const uniqueSlugString = `${parentCategoryName} ${newName}`;
         const newSlug = slugify(uniqueSlugString, { lower: true, strict: true });
-        
-        const { data, error } = await supabase
-            .from('sub_categories')
-            .insert({ name: newName, slug: newSlug, parent_category_id: parentId })
-            .select()
-            .single();
 
+        const { data, error } = await supabase.from('sub_categories').insert({ name: newName, slug: newSlug, parent_category_id: parentId }).select().single();
         if (error) {
-            if (error.code === '23505') {
-                toast.error(`This sub-category already exists under this main category.`);
-            } else {
-                toast.error(`Failed to add sub-category: ${error.message}`);
-            }
+            toast.error(`Failed to add sub-category: ${error.message}`);
         } else {
             toast.success(`Sub-category "${newName}" added successfully!`);
             setSubCategories([...subCategories, data]);
@@ -157,7 +174,7 @@ export default function CreatePostPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm()) { toast.error("Please fill all required fields correctly."); return; }
+        if (!validateForm() || !post) { toast.error("Please fill all required fields correctly."); return; }
         
         startTransition(async () => {
             try {
@@ -171,33 +188,30 @@ export default function CreatePostPage() {
                 }
 
                 const slug = slugify(title, { lower: true, strict: true });
-                const { data: postData, error: postError } = await supabase.from('posts').insert({
+                const { error: postError } = await supabase.from('posts').update({
                     title, slug, content, author_name: authorName,
                     image_url: finalImageUrl || null,
                     category_id: parseInt(selectedCategory),
                     sub_category_id: selectedSubCategory ? parseInt(selectedSubCategory) : null,
                     is_featured: isFeatured,
-                }).select('id').single();
+                }).eq('id', post.id);
 
-                if (postError) throw new Error(`Post Creation Failed: ${postError.message}`);
-                const postId = postData.id;
-
+                if (postError) throw new Error(`Post Update Failed: ${postError.message}`);
+                
+                await supabase.from('post_tags').delete().eq('post_id', post.id);
                 if (tags.length > 0) {
                     for (const tagName of tags) {
                         const tagSlug = slugify(tagName, { lower: true, strict: true });
                         let { data: tag } = await supabase.from('tags').select('id').eq('slug', tagSlug).single();
                         if (!tag) {
-                            const { data: newTag, error: newTagError } = await supabase.from('tags').insert({ name: tagName, slug: tagSlug }).select('id').single();
-                            if (newTagError) throw new Error(`Failed to create tag: ${tagName}`);
+                            const { data: newTag } = await supabase.from('tags').insert({ name: tagName, slug: tagSlug }).select('id').single();
                             tag = newTag;
                         }
-                         if (tag) {
-                           await supabase.from('post_tags').insert({ post_id: postId, tag_id: tag.id });
-                        }
+                        if (tag) await supabase.from('post_tags').insert({ post_id: post.id, tag_id: tag.id });
                     }
                 }
                 
-                toast.success("Post published successfully!");
+                toast.success("Post updated successfully!");
                 router.push(`/blog/${slug}`);
                 router.refresh();
             } catch (error: any) {
@@ -206,12 +220,28 @@ export default function CreatePostPage() {
         });
     };
 
+    if (isLoading) {
+        return <div className="container flex justify-center items-center h-screen"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
+    }
+
+    if (!post) {
+         return <div className="container text-center py-20">
+            <h1 className="text-2xl font-bold">Post not found</h1>
+            <p className="text-muted-foreground">The post you are trying to edit does not exist.</p>
+            <Button asChild className="mt-4"><Link href="/blog">Go to Blog</Link></Button>
+        </div>
+    }
+
     return (
         <div className="container max-w-6xl py-12">
             <Toaster richColors position="top-right" />
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                <h1 className="text-4xl font-extrabold tracking-tight mb-2">Create New Post</h1>
-                <p className="text-muted-foreground mb-8">Fill out the details below to publish a new article to Axiora Blogs.</p>
+                <Link href={`/blog/${post.slug}`} className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Post
+                </Link>
+                <h1 className="text-4xl font-extrabold tracking-tight mb-2">Edit Post</h1>
+                <p className="text-muted-foreground mb-8">Make changes to your article below.</p>
             </motion.div>
             
             <form onSubmit={handleSubmit}>
@@ -222,7 +252,7 @@ export default function CreatePostPage() {
                             <Card><CardContent className="p-6 space-y-6">
                                 <div>
                                     <Label htmlFor="title" className={formErrors.title ? 'text-destructive' : ''}>Post Title</Label>
-                                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., The Future of Quantum Computing" required disabled={isPending} />
+                                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required disabled={isPending} />
                                     {formErrors.title && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.title}</p>}
                                 </div>
                                 <div>
@@ -237,16 +267,16 @@ export default function CreatePostPage() {
                     {/* Sidebar Column */}
                     <div className="lg:col-span-1 space-y-6">
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                            <Card><CardHeader><CardTitle>Publishing Details</CardTitle></CardHeader><CardContent className="space-y-6">
+                            <Card><CardHeader><CardTitle>Update Details</CardTitle></CardHeader><CardContent className="space-y-6">
                                 <div>
                                     <Label htmlFor="author_name" className={formErrors.authorName ? 'text-destructive' : ''}>Author Name</Label>
-                                    <Input id="author_name" value={authorName} onChange={(e) => setAuthorName(e.target.value)} placeholder="e.g., Jason Francis" required disabled={isPending} />
+                                    <Input id="author_name" value={authorName} onChange={(e) => setAuthorName(e.target.value)} required disabled={isPending} />
                                     {formErrors.authorName && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.authorName}</p>}
                                 </div>
                                 <div className="flex items-center space-x-2 pt-2">
                                     <Checkbox id="is_featured" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(!!checked)} disabled={isPending} /><Label htmlFor="is_featured" className="font-medium">Mark as a Featured Post</Label>
                                 </div>
-                                <Button type="submit" className="w-full font-bold" disabled={isPending || !title || !content}>{isPending ? <><LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Publishing...</> : 'Publish Post'}</Button>
+                                <Button type="submit" className="w-full font-bold" disabled={isPending || !title || !content}>{isPending ? <><LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Saving Changes...</> : 'Save Changes'}</Button>
                             </CardContent></Card>
                         </motion.div>
 

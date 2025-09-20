@@ -9,7 +9,7 @@ export function NewsFilterControls() {
     const searchParams = useSearchParams();
     const currentSort = searchParams.get('sortBy') || 'publishedAt';
 
-    const handleSortChange = (newSortBy: string) => { // <-- මෙතන වෙනස් වෙනවා
+    const handleSortChange = (newSortBy: string) => { 
         const params = new URLSearchParams(searchParams);
         params.set('sortBy', newSortBy);
         params.set('page', '1');
@@ -19,7 +19,7 @@ export function NewsFilterControls() {
     return (
         <SortDropdown
             value={currentSort}
-            onValueChange={handleSortChange} // <-- මෙතන වෙනස් වෙනවා
+            onValueChange={handleSortChange} 
             options={[
                 { value: 'publishedAt', label: 'Sort by: Latest' },
                 { value: 'popularity', label: 'Sort by: Popularity' },

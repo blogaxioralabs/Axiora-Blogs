@@ -17,7 +17,7 @@ export function LikeButton({ postId, initialLikes }: LikeButtonProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
 
-  // Component එක load වෙද්දි user මේ post එකට කලින් like කරලද කියලා බලනවා
+  
   useEffect(() => {
     const likedPosts = JSON.parse(localStorage.getItem('liked-posts') || '{}');
     if (likedPosts[postId]) {
@@ -32,19 +32,19 @@ export function LikeButton({ postId, initialLikes }: LikeButtonProps) {
     setLikes((prevLikes) => prevLikes + 1);
     setIsLiked(true);
 
-    // LocalStorage එකේ මේ post ID එක save කරනවා
+    
     const likedPosts = JSON.parse(localStorage.getItem('liked-posts') || '{}');
     likedPosts[postId] = true;
     localStorage.setItem('liked-posts', JSON.stringify(likedPosts));
 
-    // Supabase function එක call කරනවා
+    
     const { error } = await supabase.rpc('increment_likes', {
       post_id_to_inc: postId,
     });
 
     if (error) {
       console.error('Error incrementing likes:', error);
-      // Error එකක් ආවොත්, UI එකේ කරපු වෙනස ආපහු අයින් කරනවා
+     
       setLikes((prevLikes) => prevLikes - 1);
       setIsLiked(false);
       delete likedPosts[postId];

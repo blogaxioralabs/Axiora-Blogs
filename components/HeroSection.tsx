@@ -23,10 +23,9 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.4)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.4)_1px,transparent_1px)] bg-[size:24px_24px]"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,hsl(var(--secondary)),transparent)] opacity-50 dark:opacity-30"></div>
         
-        {/* --- මේ කොටස අලුතින් එකතු කරන්න --- */}
         {/* This div creates a smooth fade from the hero background to the page background */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background to-transparent" />
-        {/* --- අලුත් කොටස මෙතනින් ඉවරයි --- */}
+        
       </div>
       
       <div className="container text-center flex flex-col items-center px-4 z-10">

@@ -1,14 +1,7 @@
 import { supabase } from '../lib/supabaseClient';
 import HomePageClient from './HomePageClient';
 import { Suspense } from 'react';
-
-// Define the type for a single news article for type safety
-interface NewsArticle {
-    title: string;
-    url: string;
-    source: { name: string };
-    publishedAt: string;
-}
+import type { Post, Category, SubCategory, NewsArticle } from '@/lib/types';
 
 // Function to fetch a small list of trending news
 async function getTrendingNews() {
@@ -36,15 +29,15 @@ async function getPageData() {
       .select('*, like_count, categories(name), sub_categories(name, slug)')
       .order('created_at', { ascending: false }),
     supabase.from('categories').select('id, name'),
-    supabase.from('sub_categories').select('id, name, parent_category_id'),
-    getTrendingNews() // Fetch trending news concurrently
+    supabase.from('sub_categories').select('id, name, parent_category_id'), 
+    getTrendingNews()
   ]);
 
   return {
-    posts: postsRes.data || [],
-    categories: catRes.data || [],
-    subCategories: subCatRes.data || [],
-    trendingNews: trendingNews || [],
+    posts: (postsRes.data as Post[]) || [],
+    categories: (catRes.data as Category[]) || [],
+    subCategories: (subCatRes.data as SubCategory[]) || [],
+    trendingNews: (trendingNews as NewsArticle[]) || [],
   };
 }
 

@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { LikeButton } from '@/components/LikeButton'; 
 import { CommentSection } from '@/components/CommentSection'; 
 import { RelatedPosts } from '@/components/RelatedPosts';
+import type { Metadata } from 'next';
 
 type PostPageProps = {
   params: { slug: string };
@@ -72,7 +73,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 </header>
 
                 {post.image_url && (
-                    <img src={post.image_url} alt={post.title} className="w-full rounded-lg shadow-lg mb-8" />
+                    <img src={post.image_url} alt={`${post.title} - Main image`} className="w-full rounded-lg shadow-lg mb-8" />
                 )}
                 
                 <div className="prose dark:prose-invert max-w-none">
@@ -105,24 +106,55 @@ export default async function PostPage({ params }: PostPageProps) {
   );
 }
 
-export async function generateMetadata({ params }: PostPageProps) {
+export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
     const post = await getPost(params.slug);
     if (!post) { return { title: 'Post Not Found' }; }
     const excerpt = createExcerpt(post.content);
+    const siteUrl = 'https://axiora-blogs.vercel.app';
+
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        'headline': post.title,
+        'image': post.image_url || `${siteUrl}/axiora-logo.png`,
+        'author': {
+            '@type': 'Person',
+            'name': post.author_name || 'Axiora Labs',
+        },
+        'publisher': {
+            '@type': 'Organization',
+            'name': 'Axiora Blogs',
+            'logo': {
+                '@type': 'ImageObject',
+                'url': `${siteUrl}/axiora-logo.png`,
+            },
+        },
+        'datePublished': new Date(post.created_at).toISOString(),
+        'description': excerpt,
+    };
+
     return { 
         title: post.title,
         description: excerpt,
+        alternates: {
+            canonical: `${siteUrl}/blog/${post.slug}`,
+        },
         openGraph: {
             title: post.title,
             description: excerpt,
+            url: `${siteUrl}/blog/${post.slug}`,
             type: 'article',
-            images: [{ url: post.image_url || '/axiora-logo.png', width: 1200, height: 630, alt: post.title }],
+            images: [{ url: post.image_url || `${siteUrl}/axiora-logo.png` }],
         },
         twitter: {
             card: 'summary_large_image',
             title: post.title,
             description: excerpt,
-            images: [post.image_url || '/axiora-logo.png'],
+            images: [post.image_url || `${siteUrl}/axiora-logo.png`],
+        },
+        // Add the script tag to the head of the document
+        other: {
+            "script": JSON.stringify(jsonLd),
         },
     };
 }

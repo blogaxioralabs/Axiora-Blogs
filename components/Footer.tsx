@@ -2,24 +2,37 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { NewsletterForm } from './NewsletterForm';
 import { Twitter, Linkedin, Instagram, Facebook } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient'; 
 
-export default function Footer() {
+
+type Category = {
+    id: number;
+    name: string;
+    slug: string;
+};
+
+
+export default async function Footer() {
+    const { data: categories } = await supabase
+        .from('categories')
+        .select('id, name, slug')
+        .order('name', { ascending: true });
+
     return (
         <footer className="border-t bg-card">
             <div className="container mx-auto px-4 py-12">
                 {/* Top section */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-10 text-center md:text-left border-b pb-10 mb-8">
                     
-                    {/* About Section (Centered on Mobile) */}
-                    <div className="space-y-4 col-span-1 md:col-span-4 flex flex-col items-center md:items-start">
+                    {/* About Section */}
+                    <div className="space-y-4 col-span-1 md:col-span-3 flex flex-col items-center md:items-start">
                         <Link href="/" className="inline-block">
                              <div className="relative w-32 h-10"> 
                                 <Image 
                                     src="/axiora-logo.png" 
                                     alt="Axiora Labs Logo" 
                                     fill
-                                    // THIS IS THE FIX: Changed 'left' to 'center' for mobile view
-                                    style={{ objectFit: 'contain', objectPosition: 'center' }}
+                                    style={{ objectFit: 'contain', objectPosition: 'center md:left' }}
                                     sizes="(max-width: 768px) 100vw, 33vw"
                                 />
                             </div>
@@ -29,18 +42,33 @@ export default function Footer() {
                         </p>
                     </div>
 
-                    {/* Quick Links (Centered on Mobile) */}
+                    {/* Quick Links */}
                     <div className="col-span-1 md:col-span-2">
                         <h3 className="font-semibold mb-4 text-foreground">Quick Links</h3>
                         <ul className="space-y-3 text-sm text-muted-foreground">
                             <li><Link href="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
+                            <li><Link href="/news" className="hover:text-primary transition-colors">News</Link></li>
                             <li><Link href="/about" className="hover:text-primary transition-colors">About</Link></li>
-                             <li><a href="https://axioralabs.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Axiora Labs</a></li>
+                            <li><a href="https://axioralabs.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Axiora Labs</a></li>
                         </ul>
                     </div>
                     
-                     {/* Newsletter (Centered on Mobile) */}
-                    <div className="col-span-1 md:col-span-6 flex flex-col items-center md:items-start">
+                    {/* Categories Section */}
+                    <div className="col-span-1 md:col-span-2">
+                        <h3 className="font-semibold mb-4 text-foreground">Categories</h3>
+                        <ul className="space-y-3 text-sm text-muted-foreground">
+                            {categories?.map((category: Category) => (
+                                <li key={category.id}>
+                                    <Link href={`/category/${category.slug}`} className="hover:text-primary transition-colors">
+                                        {category.name}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    
+                    {/* Newsletter */}
+                    <div className="col-span-1 md:col-span-5 flex flex-col items-center md:items-start">
                          <h3 className="font-semibold mb-4 text-foreground">Subscribe to our Newsletter</h3>
                          <p className="text-sm text-muted-foreground mb-4 px-4 md:px-0">
                             Get the latest articles and updates delivered straight to your inbox.
@@ -49,7 +77,7 @@ export default function Footer() {
                     </div>
                 </div>
 
-                {/* Bottom section (Already mobile-friendly, but improved alignment) */}
+                {/* Bottom section */}
                 <div className="flex flex-col-reverse items-center justify-between gap-6 sm:flex-row">
                     <p className="text-sm text-muted-foreground text-center sm:text-left">
                         &copy; {new Date().getFullYear()} Axiora Labs. All Rights Reserved.

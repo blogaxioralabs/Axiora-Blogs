@@ -1,4 +1,3 @@
-// app/blog/BlogPageClient.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -88,7 +87,7 @@ export default function BlogPageClient() {
     }
 
     getPaginatedPosts();
-  }, [currentPage, selectedValue, sortBy]); // sortBy එක dependency list එකට එකතු කරනවා
+  }, [currentPage, selectedValue, sortBy]);
 
   return (
     <div className="container py-12">
@@ -98,8 +97,7 @@ export default function BlogPageClient() {
         <div className="flex flex-col sm:flex-row items-center gap-4">
             <SortDropdown
                 value={sortBy}
-                // onChange={(e) => setSortBy(e.target.value)} <-- මේ පේළිය වෙනුවට
-                onValueChange={setSortBy} // <-- මේ අලුත් පේළිය යොදන්න
+                onValueChange={setSortBy}
                 options={[
                     { value: 'created_at,desc', label: 'Sort by: Latest' },
                     { value: 'created_at,asc', label: 'Sort by: Oldest' },

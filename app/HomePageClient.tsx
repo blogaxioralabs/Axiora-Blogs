@@ -15,10 +15,15 @@ interface HomePageClientProps {
   initialPosts: Post[];
   initialCategories: Category[];
   initialSubCategories: SubCategory[];
-  trendingNews: NewsArticle[]; // Add trendingNews to props
+  trendingNews: NewsArticle[];
 }
 
-export default function HomePageClient({ initialPosts, initialCategories, initialSubCategories, trendingNews }: HomePageClientProps) {
+export default function HomePageClient({ 
+    initialPosts, 
+    initialCategories, 
+    initialSubCategories, 
+    trendingNews 
+}: HomePageClientProps) {
   const [selectedValue, setSelectedValue] = useState<string>('all');
 
   const featuredPosts = initialPosts.filter(p => p.is_featured);
@@ -27,7 +32,6 @@ export default function HomePageClient({ initialPosts, initialCategories, initia
   }
 
   const latestPosts = initialPosts
-    .filter(p => !p.is_featured)
     .filter(p => {
         if (selectedValue === 'all') return true;
         if (selectedValue.startsWith('cat-')) {

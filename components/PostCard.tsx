@@ -49,7 +49,7 @@ export default function PostCard({ post }: { post: Post }) {
                     {post.image_url && (
     <Image
         src={post.image_url}
-        alt={post.title}
+        alt={`${post.title} - Featured image`}
         fill
         className="object-cover transition-transform duration-300 group-hover:scale-105"
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

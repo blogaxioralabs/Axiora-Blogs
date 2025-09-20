@@ -7,12 +7,37 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://axiora-blogs.vercel.app'),
   title: {
     default: 'Axiora Blogs - Exploring STEM',
     template: '%s | Axiora Blogs',
   },
   description: 'Your daily dose of Science, Technology, Engineering, and Mathematics. Discover the future with Axiora Blogs.',
-  keywords: ['STEM', 'Technology Blog', 'Science', 'AI', 'Web Development'],
+  keywords: ['STEM', 'Technology Blog', 'Science', 'AI', 'Web Development', 'Axiora Labs'],
+  openGraph: {
+    title: 'Axiora Blogs',
+    description: 'Exploring the frontiers of Science, Technology, Engineering, and Mathematics.',
+    url: 'https://axiora-blogs.vercel.app',
+    siteName: 'Axiora Blogs',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Axiora Blogs',
+    description: 'Exploring the frontiers of Science, Technology, Engineering, and Mathematics.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 }
 
 export default function RootLayout({
@@ -23,7 +48,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`min-h-screen bg-background font-sans antialiased ${inter.className}`}>
-        {/* THIS IS THE FIX: We added overflow-x-hidden to the main div */}
         <div className="relative flex min-h-screen flex-col overflow-x-hidden">
             <Navbar />
             <div className="flex-1">{children}</div>
