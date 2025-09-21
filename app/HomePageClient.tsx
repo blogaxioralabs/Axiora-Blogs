@@ -8,7 +8,8 @@ import { ArrowRight } from 'lucide-react';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { FeaturedPostSlider } from '@/components/FeaturedPostSlider';
 import { HeroSection } from '@/components/HeroSection';
-import { TrendingNews } from '@/components/TrendingNews'; 
+import { TrendingNews } from '@/components/TrendingNews';
+import { AdBanner } from '@/components/AdBanner'; // Import eka mehema thiyenna arinna
 import type { Post, Category, SubCategory, NewsArticle } from '@/lib/types';
 
 interface HomePageClientProps {
@@ -18,12 +19,13 @@ interface HomePageClientProps {
   trendingNews: NewsArticle[];
 }
 
-export default function HomePageClient({ 
-    initialPosts, 
-    initialCategories, 
-    initialSubCategories, 
-    trendingNews 
+export default function HomePageClient({
+    initialPosts,
+    initialCategories,
+    initialSubCategories,
+    trendingNews
 }: HomePageClientProps) {
+  // ... (The rest of the component logic remains the same)
   const [selectedValue, setSelectedValue] = useState<string>('all');
 
   const featuredPosts = initialPosts.filter(p => p.is_featured);
@@ -50,16 +52,12 @@ export default function HomePageClient({
 
       <main className="container pb-12 space-y-16 md:space-y-24">
         
-        {/* --- Featured & Trending Section --- */}
         <section>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Featured Posts Slider */}
             <div className="lg:col-span-2">
               <h2 className="text-3xl font-bold tracking-tight mb-8">Featured Posts</h2>
               {featuredPosts.length > 0 && <FeaturedPostSlider posts={featuredPosts} />}
             </div>
-
-            {/* Right Column: Trending News */}
             <div className="lg:col-span-1">
               <TrendingNews articles={trendingNews} />
             </div>
@@ -98,6 +96,15 @@ export default function HomePageClient({
               </p>
           )}
         </section>
+
+        {/* === ADVERTISEMENT SECTION (Updated) === */}
+        <section className="py-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <AdBanner />
+                <AdBanner />
+            </div>
+        </section>
+        {/* ======================================= */}
       </main>
     </>
   );

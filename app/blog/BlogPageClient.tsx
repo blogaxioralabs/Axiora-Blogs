@@ -7,11 +7,13 @@ import { AnimatedPostCard } from '@/components/AnimatedPostCard';
 import { Pagination } from '@/components/Pagination';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { SortDropdown } from '@/components/SortDropdown';
+import { AdBanner } from '@/components/AdBanner'; // <-- Import eka mehema thiyenna arinna
 import type { Post, Category, SubCategory } from '@/lib/types';
 
 const POSTS_PER_PAGE = 9;
 
 export default function BlogPageClient() {
+  // ... (The rest of the component logic remains the same)
   const searchParams = useSearchParams();
   const currentPage = Number(searchParams.get('page')) || 1;
 
@@ -21,8 +23,6 @@ export default function BlogPageClient() {
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [selectedValue, setSelectedValue] = useState<string>('all');
   const [loading, setLoading] = useState(true);
-
-  // Sort කිරීම සඳහා අලුත් state එකක්
   const [sortBy, setSortBy] = useState('created_at,desc');
 
   useEffect(() => {
@@ -40,9 +40,7 @@ export default function BlogPageClient() {
   useEffect(() => {
     async function getPaginatedPosts() {
         setLoading(true);
-
         let query = supabase.from('posts').select('*', { count: 'exact' });
-
         if (selectedValue.startsWith('cat-')) {
             query = query.eq('category_id', parseInt(selectedValue.split('-')[1]));
         } else if (selectedValue.startsWith('sub-')) {
@@ -58,18 +56,15 @@ export default function BlogPageClient() {
 
         const calculatedTotalPages = Math.ceil((count || 0) / POSTS_PER_PAGE);
         setTotalPages(calculatedTotalPages);
-
         const validCurrentPage = Math.max(1, Math.min(currentPage, calculatedTotalPages || 1));
         const from = (validCurrentPage - 1) * POSTS_PER_PAGE;
         const to = from + POSTS_PER_PAGE - 1;
-
-        // Sorting logic එක මෙතනට එකතු කරනවා
         const [sortColumn, sortDirection] = sortBy.split(',');
 
         let dataQuery = supabase
             .from('posts')
             .select('*, like_count, categories(name), sub_categories(name, slug)')
-            .order(sortColumn, { ascending: sortDirection === 'asc' }) // Dynamic sorting
+            .order(sortColumn, { ascending: sortDirection === 'asc' })
             .range(from, to);
 
         if (selectedValue.startsWith('cat-')) {
@@ -79,13 +74,10 @@ export default function BlogPageClient() {
         }
 
         const { data, error } = await dataQuery;
-
         if (error) console.error('Error fetching posts:', error);
-
         setPosts(data || []);
         setLoading(false);
     }
-
     getPaginatedPosts();
   }, [currentPage, selectedValue, sortBy]);
 
@@ -93,7 +85,6 @@ export default function BlogPageClient() {
     <div className="container py-12">
       <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
         <h1 className="text-4xl font-bold">All Articles</h1>
-
         <div className="flex flex-col sm:flex-row items-center gap-4">
             <SortDropdown
                 value={sortBy}
@@ -113,7 +104,6 @@ export default function BlogPageClient() {
         </div>
       </div>
 
-
       {loading ? (
         <p className="text-center text-muted-foreground pt-10">Loading articles...</p>
       ) : posts.length > 0 ? (
@@ -124,6 +114,15 @@ export default function BlogPageClient() {
               ))}
             </div>
             <Pagination totalPages={totalPages} />
+            
+            {/* === ADVERTISEMENT SECTION (Updated) === */}
+            <div className="mt-16 pt-12 border-t">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <AdBanner />
+                  <AdBanner />
+              </div>
+            </div>
+            {/* ======================================= */}
           </>
       ) : (
           <p className="text-center text-muted-foreground pt-10">
