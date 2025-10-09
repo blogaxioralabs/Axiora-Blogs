@@ -1,6 +1,6 @@
 // app/api/cite/route.ts
 import { NextResponse } from 'next/server';
-const Cite = require('citation-js');
+import Cite from 'citation-js';
 
 export async function POST(request: Request) {
   try {
