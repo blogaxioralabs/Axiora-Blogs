@@ -1,9 +1,11 @@
 // app/api/cite/route.ts
 import { NextResponse } from 'next/server';
-const Cite = require('citation-js'); 
 
 export async function POST(request: Request) {
   try {
+    // 1. Dynamically import citation-js right when it's needed.
+    const { default: Cite } = await import('citation-js');
+
     const post = await request.json();
 
     if (!post || !post.title || !post.created_at || !post.slug) {
@@ -29,6 +31,7 @@ export async function POST(request: Request) {
       retrieved: { 'date-parts': [[new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()]] }
     };
 
+    // 2. Now, 'Cite' is correctly recognized as a constructor.
     const cite = new Cite(citationData);
     
     const citations = {
