@@ -7,7 +7,6 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, Copy, BookOpen } from 'lucide-react';
 
-// Post දත්ත සඳහා type එක
 interface PostDetails {
     title: string;
     author_name?: string;
@@ -15,7 +14,6 @@ interface PostDetails {
     slug: string;
 }
 
-// උපුටා දැක්වීමේ ශෛලීන්
 const citationStyles = [
     { id: 'apa', name: 'APA 7' },
     { id: 'harvard1', name: 'Harvard' },
@@ -28,53 +26,26 @@ export function CitationGenerator({ post }: { post: PostDetails }) {
     const [copiedStyle, setCopiedStyle] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!post?.title || !post.created_at || !post.slug) {
+        if (!post?.title) {
             setIsLoading(false);
             return;
         }
 
-        const generateCitations = async () => {
+        const fetchCitations = async () => {
             setIsLoading(true);
             try {
-                // 1. Library එක function එක ඇතුළේ dynamic විදියට import කිරීම
-                const { default: Cite } = await import('citation-js');
+                const response = await fetch('/api/cite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(post),
+                });
 
-                const publicationDate = new Date(post.created_at);
-                if (isNaN(publicationDate.getTime())) {
-                    throw new Error('Invalid date format for post.created_at');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch citations');
                 }
 
-                const siteUrl = 'https://axiora-blogs.vercel.app';
-                const postUrl = `${siteUrl}/blog/${post.slug}`;
-
-                const citationData = {
-                    id: post.slug,
-                    type: 'webpage',
-                    title: post.title,
-                    author: [{ literal: post.author_name || 'Axiora Labs' }],
-                    issued: {
-                        'date-parts': [[publicationDate.getFullYear(), publicationDate.getMonth() + 1, publicationDate.getDate()]],
-                    },
-                    URL: postUrl,
-                    'container-title': 'Axiora Blogs',
-                    retrieved: {
-                        'date-parts': [[new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()]],
-                    }
-                };
-                
-                // 2. Import කරගත් Cite එක භාවිත කිරීම
-                const cite = new Cite(citationData);
-                
-                const generated: Record<string, string> = {};
-                for (const style of citationStyles) {
-                    generated[style.id] = cite.format('bibliography', {
-                        format: 'text',
-                        template: style.id,
-                        lang: 'en-US',
-                    });
-                }
-                setCitations(generated);
-
+                const data = await response.json();
+                setCitations(data);
             } catch (error) {
                 console.error("Citation generation failed:", error);
                 const errorCitations: Record<string, string> = {};
@@ -87,14 +58,13 @@ export function CitationGenerator({ post }: { post: PostDetails }) {
             }
         };
 
-        generateCitations();
+        fetchCitations();
 
     }, [post]);
-
+    
     const handleCopy = (styleId: string) => {
         const citationText = citations[styleId];
         if (!citationText || citationText.startsWith("Could not")) return;
-
         navigator.clipboard.writeText(citationText.trim());
         setCopiedStyle(styleId);
         setTimeout(() => setCopiedStyle(null), 2000);
@@ -114,7 +84,6 @@ export function CitationGenerator({ post }: { post: PostDetails }) {
                     Cite This Article
                 </h2>
             </div>
-
             <Tabs defaultValue="apa" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 bg-muted/50">
                     {citationStyles.map((style) => (
