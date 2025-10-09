@@ -6,9 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, Copy, BookOpen } from 'lucide-react';
-// නිවැරදි කරන ලද import ක්‍රමය
-const Cite = require('citation-js');
 
+// Post දත්ත සඳහා type එක
 interface PostDetails {
     title: string;
     author_name?: string;
@@ -16,6 +15,7 @@ interface PostDetails {
     slug: string;
 }
 
+// උපුටා දැක්වීමේ ශෛලීන්
 const citationStyles = [
     { id: 'apa', name: 'APA 7' },
     { id: 'harvard1', name: 'Harvard' },
@@ -33,9 +33,12 @@ export function CitationGenerator({ post }: { post: PostDetails }) {
             return;
         }
 
-        const generateCitations = () => {
+        const generateCitations = async () => {
             setIsLoading(true);
             try {
+                // 1. Library එක function එක ඇතුළේ dynamic විදියට import කිරීම
+                const { default: Cite } = await import('citation-js');
+
                 const publicationDate = new Date(post.created_at);
                 if (isNaN(publicationDate.getTime())) {
                     throw new Error('Invalid date format for post.created_at');
@@ -58,9 +61,10 @@ export function CitationGenerator({ post }: { post: PostDetails }) {
                         'date-parts': [[new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()]],
                     }
                 };
-
+                
+                // 2. Import කරගත් Cite එක භාවිත කිරීම
                 const cite = new Cite(citationData);
-
+                
                 const generated: Record<string, string> = {};
                 for (const style of citationStyles) {
                     generated[style.id] = cite.format('bibliography', {
@@ -83,8 +87,7 @@ export function CitationGenerator({ post }: { post: PostDetails }) {
             }
         };
 
-        // setTimeout එකක් යොදා library එක load වීමට සුළු වේලාවක් ලබා දීම
-        setTimeout(generateCitations, 100);
+        generateCitations();
 
     }, [post]);
 
