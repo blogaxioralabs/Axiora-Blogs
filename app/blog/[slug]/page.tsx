@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { LikeButton } from '@/components/LikeButton'; 
 import { CommentSection } from '@/components/CommentSection'; 
 import { RelatedPosts } from '@/components/RelatedPosts';
+import { CitationGenerator } from '@/components/CitationGenerator';
 import type { Metadata } from 'next';
 
 type PostPageProps = {
@@ -98,6 +99,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 <ShareButtons title={post.title} />
                 <LikeButton postId={post.id} initialLikes={post.like_count || 0} />
                 <CommentSection postId={post.id} />
+                <CitationGenerator post={post} /> 
             </article>
         </div>
 

@@ -5,7 +5,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import slugify from 'slugify';
-import dynamic from 'next/dynamic'; // <-- 1. Import dynamic
+import dynamic from 'next/dynamic'; 
 
 // UI Components
 import { Button } from '@/components/ui/button';
