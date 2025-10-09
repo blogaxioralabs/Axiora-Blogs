@@ -250,7 +250,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                     <div className="lg:col-span-2 space-y-6">
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                             <Card><CardContent className="p-6 space-y-6">
-                                <div>
+                                <div className="space-y-1.5">
                                     <Label htmlFor="title" className={formErrors.title ? 'text-destructive' : ''}>Post Title</Label>
                                     <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required disabled={isPending} />
                                     {formErrors.title && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.title}</p>}
@@ -268,7 +268,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                     <div className="lg:col-span-1 space-y-6">
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                             <Card><CardHeader><CardTitle>Update Details</CardTitle></CardHeader><CardContent className="space-y-6">
-                                <div>
+                                <div className="space-y-1.5">
                                     <Label htmlFor="author_name" className={formErrors.authorName ? 'text-destructive' : ''}>Author Name</Label>
                                     <Input id="author_name" value={authorName} onChange={(e) => setAuthorName(e.target.value)} required disabled={isPending} />
                                     {formErrors.authorName && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.authorName}</p>}
@@ -282,7 +282,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
                             <Card><CardHeader><CardTitle>Organization</CardTitle></CardHeader><CardContent className="space-y-6">
-                                <div>
+                                <div className="space-y-1.5">
                                     <Label className={formErrors.category ? 'text-destructive' : ''}>Category</Label>
                                     <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isPending}>
                                         <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
@@ -290,7 +290,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                                     </Select>
                                     {formErrors.category && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.category}</p>}
                                 </div>
-                                <div>
+                                <div className="space-y-1.5">
                                     <Label>Sub-category</Label>
                                     <Select value={selectedSubCategory} onValueChange={setSelectedSubCategory} disabled={isPending || !selectedCategory}>
                                         <SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger>
@@ -301,7 +301,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                                         <Button type="button" variant="outline" size="icon" className="h-8 w-8 flex-shrink-0" onClick={handleAddNewSubCategory} disabled={isPending || !selectedCategory || !newSubCategoryInput}><PlusCircle size={16} /></Button>
                                     </div>
                                 </div>
-                                <div>
+                                <div className="space-y-1.5">
                                     <Label htmlFor="tags">Additional Tags</Label>
                                     <div className="flex flex-wrap items-center gap-2 rounded-md border p-2 mt-1">
                                         {tags.map(tag => (<div key={tag} className="flex items-center gap-1 bg-secondary text-secondary-foreground text-xs font-semibold px-2 py-1 rounded-md">{tag}<button type="button" onClick={() => removeTag(tag)} className="text-muted-foreground hover:text-foreground"><X size={12} /></button></div>))}
