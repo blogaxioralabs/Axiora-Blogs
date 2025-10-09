@@ -41,13 +41,13 @@ export function CitationGenerator({ post }: { post: PostDetails }) {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch citations');
+                    throw new Error(`API Error: ${response.statusText}`);
                 }
 
                 const data = await response.json();
                 setCitations(data);
             } catch (error) {
-                console.error("Citation generation failed:", error);
+                console.error("Citation fetch failed:", error);
                 const errorCitations: Record<string, string> = {};
                 citationStyles.forEach(style => {
                     errorCitations[style.id] = "Could not generate citation for this article.";
