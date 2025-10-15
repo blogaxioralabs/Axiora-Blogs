@@ -7,11 +7,12 @@ import { ShareButtons } from '@/components/ShareButtons';
 import { ViewCounter } from '@/components/ViewCounter';
 import { Eye, UserCircle } from 'lucide-react';
 import Link from 'next/link';
-import { LikeButton } from '@/components/LikeButton'; 
-import { CommentSection } from '@/components/CommentSection'; 
+import { LikeButton } from '@/components/LikeButton';
+import { CommentSection } from '@/components/CommentSection';
 import { RelatedPosts } from '@/components/RelatedPosts';
 import { CitationGenerator } from '@/components/CitationGenerator';
 import type { Metadata } from 'next';
+import Image from 'next/image';
 
 type PostPageProps = {
   params: { slug: string };
@@ -19,7 +20,7 @@ type PostPageProps = {
 
 function createExcerpt(content: string, length = 155): string {
     if (!content) return '';
-    const strippedContent = content.replace(/(\r\n|\n|\r|#|\[.*?\]\(.*?\))/gm, " ").replace(/\s+/g, ' ').trim();
+    const strippedContent = content.replace(/(\r\n|\n|\r|#|\[.*?\]\(.*?\)|!\[.*?\]\(.*?\))/gm, " ").replace(/\s+/g, ' ').trim();
     if (strippedContent.length <= length) return strippedContent;
     return strippedContent.substring(0, strippedContent.lastIndexOf(' ', length)) + '...';
 }
@@ -27,13 +28,31 @@ function createExcerpt(content: string, length = 155): string {
 async function getPost(slug: string) {
   const { data: post, error } = await supabase
     .from('posts')
-    .select(`*, like_count, view_count, categories ( name ), sub_categories ( name, slug ), tags ( id, name, slug )`) 
+    .select(`*, like_count, view_count, categories ( name ), sub_categories ( name, slug ), tags ( id, name, slug )`)
     .eq('slug', slug)
     .single();
 
   if (error || !post) return null;
   return post;
 }
+
+// --- UPDATED & SIMPLIFIED: Custom Image Component for ReactMarkdown ---
+const MarkdownImage = ({ src, alt }: { src?: string; alt?: string; }) => {
+    if (!src) return null;
+
+    return (
+        <figure className="content-image">
+            <Image
+                src={src}
+                alt={alt || 'Blog content image'}
+                width={800}
+                height={450}
+                className="w-full h-auto object-cover rounded-lg"
+            />
+            {alt && <figcaption className="text-center text-sm text-muted-foreground mt-2">{alt}</figcaption>}
+        </figure>
+    );
+};
 
 export default async function PostPage({ params }: PostPageProps) {
   const post = await getPost(params.slug);
@@ -42,8 +61,36 @@ export default async function PostPage({ params }: PostPageProps) {
     notFound();
   }
 
+  const siteUrl = 'https://axiora-blogs.vercel.app';
+  const excerpt = createExcerpt(post.content || '');
+  const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      'headline': post.title,
+      'image': post.image_url || `${siteUrl}/axiora-logo.png`,
+      'author': {
+          '@type': 'Person',
+          'name': post.author_name || 'Axiora Labs',
+      },
+      'publisher': {
+          '@type': 'Organization',
+          'name': 'Axiora Blogs',
+          'logo': {
+              '@type': 'ImageObject',
+              'url': `${siteUrl}/axiora-logo.png`,
+          },
+      },
+      'datePublished': new Date(post.created_at).toISOString(),
+      'description': excerpt,
+  };
+
   return (
     <>
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+
         <div className="container max-w-4xl py-12">
             <ViewCounter postId={post.id} />
             <article>
@@ -74,15 +121,27 @@ export default async function PostPage({ params }: PostPageProps) {
                 </header>
 
                 {post.image_url && (
-                    <img src={post.image_url} alt={`${post.title} - Main image`} className="w-full rounded-lg shadow-lg mb-8" />
+                    <Image
+                        src={post.image_url}
+                        alt={`${post.title} - Main image`}
+                        width={1200}
+                        height={675}
+                        className="w-full h-auto rounded-lg shadow-lg mb-8"
+                        priority
+                    />
                 )}
-                
+
                 <div className="prose dark:prose-invert max-w-none">
-                    <ReactMarkdown rehypePlugins={[rehypePrism]}>
-                        {post.content}
+                    <ReactMarkdown
+                        rehypePlugins={[rehypePrism]}
+                        components={{
+                            img: MarkdownImage,
+                        }}
+                    >
+                        {post.content || ''}
                     </ReactMarkdown>
                 </div>
-                
+
                 {post.tags && post.tags.length > 0 && (
                     <div className="mt-6 pt-6 border-t flex flex-wrap items-center gap-2">
                         <span className="text-sm font-semibold mr-2">Tags:</span>
@@ -95,11 +154,11 @@ export default async function PostPage({ params }: PostPageProps) {
                         ))}
                     </div>
                 )}
-                
+
                 <ShareButtons title={post.title} />
                 <LikeButton postId={post.id} initialLikes={post.like_count || 0} />
                 <CommentSection postId={post.id} />
-                <CitationGenerator post={post} /> 
+                <CitationGenerator post={post} />
             </article>
         </div>
 
@@ -111,31 +170,10 @@ export default async function PostPage({ params }: PostPageProps) {
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
     const post = await getPost(params.slug);
     if (!post) { return { title: 'Post Not Found' }; }
-    const excerpt = createExcerpt(post.content);
+    const excerpt = createExcerpt(post.content || '');
     const siteUrl = 'https://axiora-blogs.vercel.app';
 
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'Article',
-        'headline': post.title,
-        'image': post.image_url || `${siteUrl}/axiora-logo.png`,
-        'author': {
-            '@type': 'Person',
-            'name': post.author_name || 'Axiora Labs',
-        },
-        'publisher': {
-            '@type': 'Organization',
-            'name': 'Axiora Blogs',
-            'logo': {
-                '@type': 'ImageObject',
-                'url': `${siteUrl}/axiora-logo.png`,
-            },
-        },
-        'datePublished': new Date(post.created_at).toISOString(),
-        'description': excerpt,
-    };
-
-    return { 
+    return {
         title: post.title,
         description: excerpt,
         alternates: {
@@ -153,10 +191,6 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
             title: post.title,
             description: excerpt,
             images: [post.image_url || `${siteUrl}/axiora-logo.png`],
-        },
-        // Add the script tag to the head of the document
-        other: {
-            "script": JSON.stringify(jsonLd),
         },
     };
 }

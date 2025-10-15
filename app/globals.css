@@ -75,4 +75,19 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .prose p {
+    @apply text-left sm:text-justify;
+  }
+}
+
+@layer components {
+  /* --- UPDATED: Simplified Image Styling --- */
+  .prose .content-image {
+    @apply w-full my-8 rounded-lg shadow-lg; /* my-8 adds vertical space */
+  }
+
+  .prose .content-image figure {
+    @apply m-0; /* Reset default figure margin */
+  }
 }

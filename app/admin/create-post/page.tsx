@@ -5,7 +5,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import slugify from 'slugify';
-import dynamic from 'next/dynamic'; 
+import dynamic from 'next/dynamic';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -14,19 +14,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { UploadCloud, LoaderCircle, Image as ImageIcon, X, AlertCircle, PlusCircle } from 'lucide-react';
+import { UploadCloud, LoaderCircle, Image as ImageIcon, X, AlertCircle, PlusCircle, Info } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
 // Rich Text Editor (Markdown)
 import "easymde/dist/easymde.min.css";
 import type { Options } from 'easymde';
 
-// <-- 2. Dynamically import the editor
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false });
 
 // Types
 type Category = { id: number; name: string; };
 type SubCategory = { id: number; name: string; parent_category_id: number; };
+
+// Helper function to generate a unique slug
+const createUniqueSlug = async (title: string): Promise<string> => {
+    const baseSlug = slugify(title, { lower: true, strict: true });
+    let finalSlug = baseSlug;
+    let counter = 2;
+
+    while (true) {
+        const { data, error } = await supabase
+            .from('posts')
+            .select('slug')
+            .eq('slug', finalSlug)
+            .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is 'Row not found'
+            throw new Error(`Error checking slug uniqueness: ${error.message}`);
+        }
+        
+        if (!data) {
+            return finalSlug;
+        }
+
+        finalSlug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+};
 
 export default function CreatePostPage() {
     const router = useRouter();
@@ -55,17 +80,29 @@ export default function CreatePostPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
     const [filteredSubCategories, setFilteredSubCategories] = useState<SubCategory[]>([]);
-
-    const mdeOptions = useMemo((): Options => {
-        return {
-            autofocus: true,
-            spellChecker: false,
-            toolbar: [
-                "bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", 
-                "link", "image", "table", "|", "preview", "side-by-side", "fullscreen", "|", "guide"
-            ],
+    
+    const imageUploadFunction = (file: File, onSuccess: (url: string) => void, onError: (error: string) => void) => {
+        const handleUpload = async () => {
+            if (!file) return;
+            const fileName = `${Date.now()}-${slugify(file.name, { lower: true })}`;
+            const { error: uploadError } = await supabase.storage.from('post_images').upload(fileName, file);
+            if (uploadError) { onError(`Upload Failed: ${uploadError.message}`); return; }
+            const { data: { publicUrl } } = supabase.storage.from('post_images').getPublicUrl(fileName);
+            onSuccess(publicUrl);
         };
-    }, []);
+        handleUpload();
+    };
+
+    const mdeOptions = useMemo((): Options => ({
+        autofocus: true,
+        spellChecker: false,
+        uploadImage: true,
+        imageUploadFunction: imageUploadFunction,
+        imageAccept: "image/png, image/jpeg, image/gif, image/webp",
+        imageMaxSize: 10 * 1024 * 1024, // 10MB
+        toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "table", "|", "preview", "side-by-side", "fullscreen", "|", "guide"],
+        imageTexts: { sbInit: "Drop an image here to upload it..." },
+    }), []);
 
     useEffect(() => {
         async function fetchData() {
@@ -161,6 +198,8 @@ export default function CreatePostPage() {
         
         startTransition(async () => {
             try {
+                const slug = await createUniqueSlug(title);
+
                 let finalImageUrl = imageUrl;
                 if (imageFile) {
                     const fileName = `${Date.now()}-${slugify(imageFile.name, { lower: true })}`;
@@ -170,7 +209,6 @@ export default function CreatePostPage() {
                     finalImageUrl = publicUrl;
                 }
 
-                const slug = slugify(title, { lower: true, strict: true });
                 const { data: postData, error: postError } = await supabase.from('posts').insert({
                     title, slug, content, author_name: authorName,
                     image_url: finalImageUrl || null,
@@ -221,14 +259,20 @@ export default function CreatePostPage() {
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                             <Card><CardContent className="p-6 space-y-6">
                                 <div className="space-y-1.5">
-    <Label htmlFor="title" className={formErrors.title ? 'text-destructive' : ''}>Post Title</Label>
-    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., The Future of Quantum Computing" required disabled={isPending} />
-    {formErrors.title && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.title}</p>}
-</div>
+                                    <Label htmlFor="title" className={formErrors.title ? 'text-destructive' : ''}>Post Title</Label>
+                                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., The Future of Quantum Computing" required disabled={isPending} />
+                                    {formErrors.title && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.title}</p>}
+                                </div>
                                 <div>
                                     <Label htmlFor="content" className={formErrors.content ? 'text-destructive' : ''}>Content</Label>
                                     <div className="mt-1 prose dark:prose-invert max-w-none [&_.cm-s-easymde]:border [&_.cm-s-easymde]:rounded-md [&_.editor-toolbar]:rounded-t-md"><SimpleMDE options={mdeOptions} value={content} onChange={setContent} /></div>
                                     {formErrors.content && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.content}</p>}
+                                    <div className="mt-4 flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800 dark:border-sky-800/50 dark:bg-sky-950 dark:text-sky-300">
+                                        <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                                        <p>
+                                            <strong>Pro Tip:</strong> To add an image to your content, simply drag and drop an image file directly into the text editor above. It will be displayed full-width in the post.
+                                        </p>
+                                    </div>
                                 </div>
                             </CardContent></Card>
                         </motion.div>
