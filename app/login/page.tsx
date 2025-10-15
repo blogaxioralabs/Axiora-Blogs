@@ -1,3 +1,4 @@
+// Axiora Blogs/app/login/page.tsx
 'use client';
 
 import { useEffect } from 'react';
@@ -16,7 +17,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ArrowRight, Lock, Mail, LoaderCircle } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
-// The corrected validation schema
 const formSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address." }),
     password: z.string().min(1, { message: "Password is required." }),
@@ -35,7 +35,16 @@ export default function LoginPage() {
 
     useEffect(() => { const message = searchParams.get('message'); if (message) { toast.success(message); } }, [searchParams]);
 
-    const getURL = (path: string = '') => `http://localhost:3000/${path}`;
+    const getURL = () => {
+      let url =
+        process?.env?.NEXT_PUBLIC_SITE_URL ?? // Use site URL in production
+        'http://localhost:3000'; // Use localhost in development
+      // Make sure to include `https://` when not localhost.
+      url = url.includes('http') ? url : `https://${url}`;
+      // Make sure to include a trailing `/`.
+      url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
+      return url;
+    };
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         const { error } = await supabase.auth.signInWithPassword({ email: values.email, password: values.password });
@@ -44,7 +53,10 @@ export default function LoginPage() {
     }
 
     const handleOAuthSignIn = async (provider: 'google') => {
-        const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: getURL('auth/callback') } });
+        const { error } = await supabase.auth.signInWithOAuth({ 
+            provider, 
+            options: { redirectTo: `${getURL()}auth/callback` } 
+        });
         if (error) toast.error(error.message);
     };
 
@@ -85,7 +97,7 @@ export default function LoginPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                     <Button variant="outline" onClick={() => handleOAuthSignIn('google')} disabled={isSubmitting}><GoogleIcon />Google</Button>
-                     <TooltipProvider>
+                    <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="outline" disabled className="w-full"><AppleIcon />Apple</Button>

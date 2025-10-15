@@ -1,3 +1,4 @@
+// Axiora Blogs/app/register/page.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -15,7 +16,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ArrowRight, Lock, Mail, User, LoaderCircle } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
-// The corrected validation schema
 const formSchema = z.object({
     fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
     email: z.string().email({ message: "Please enter a valid email address." }),
@@ -33,19 +33,34 @@ export default function RegisterPage() {
         defaultValues: { fullName: "", email: "", password: "" },
     });
 
-    const getURL = (path: string = '') => `http://localhost:3000/${path}`;
+    const getURL = () => {
+      let url =
+        process?.env?.NEXT_PUBLIC_SITE_URL ?? // Use site URL in production
+        'http://localhost:3000'; // Use localhost in development
+      // Make sure to include `https://` when not localhost.
+      url = url.includes('http') ? url : `https://${url}`;
+      // Make sure to include a trailing `/`.
+      url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
+      return url;
+    };
     
     async function onSubmit(values: z.infer<typeof formSchema>) {
         const { error } = await supabase.auth.signUp({
             email: values.email, password: values.password,
-            options: { data: { full_name: values.fullName }, emailRedirectTo: getURL('login?message=Email confirmed. You can now log in.') },
+            options: { 
+                data: { full_name: values.fullName }, 
+                emailRedirectTo: `${getURL()}login?message=Email confirmed. You can now log in.` 
+            },
         });
         if (error) { toast.error(error.message); } 
         else { router.push('/auth/pending-verification'); }
     }
 
     const handleOAuthSignIn = async (provider: 'google') => { 
-        const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: getURL('auth/callback') } });
+        const { error } = await supabase.auth.signInWithOAuth({ 
+            provider, 
+            options: { redirectTo: `${getURL()}auth/callback` } 
+        });
         if (error) toast.error(error.message);
     };
 
