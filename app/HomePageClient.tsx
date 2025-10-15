@@ -9,7 +9,8 @@ import { CategoryFilter } from '@/components/CategoryFilter';
 import { FeaturedPostSlider } from '@/components/FeaturedPostSlider';
 import { HeroSection } from '@/components/HeroSection';
 import { TrendingNews } from '@/components/TrendingNews';
-import { AdBanner } from '@/components/AdBanner'; // Import eka mehema thiyenna arinna
+import { NewsCard } from '@/components/NewsCard'; // NewsCard component එක import කරගන්න
+import { AdBanner } from '@/components/AdBanner';
 import type { Post, Category, SubCategory, NewsArticle } from '@/lib/types';
 
 interface HomePageClientProps {
@@ -25,7 +26,6 @@ export default function HomePageClient({
     initialSubCategories,
     trendingNews
 }: HomePageClientProps) {
-  // ... (The rest of the component logic remains the same)
   const [selectedValue, setSelectedValue] = useState<string>('all');
 
   const featuredPosts = initialPosts.filter(p => p.is_featured);
@@ -97,14 +97,37 @@ export default function HomePageClient({
           )}
         </section>
 
-        {/* === ADVERTISEMENT SECTION (Updated) === */}
+        {/* === LATEST NEWS SECTION (අලුතින් එකතු කළ කොටස) === */}
+        {trendingNews && trendingNews.length > 0 && (
+            <section id="latest-news">
+                <div className="flex flex-col items-center gap-2 mb-8 text-center">
+                    <h2 className="text-3xl font-bold tracking-tight">Latest News</h2>
+                    <p className="text-muted-foreground max-w-xl">
+                        Stay updated with the latest stories and breakthroughs from the world of STEM.
+                    </p>
+                </div>
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    {trendingNews.slice(0, 3).map((article, index) => (
+                        <NewsCard key={`${article.url}-${index}`} article={article} />
+                    ))}
+                </div>
+                <div className="text-center mt-12">
+                    <Link href="/news">
+                        <Button variant="outline">
+                            View All News <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </Link>
+                </div>
+            </section>
+        )}
+        {/* ======================================================= */}
+
         <section className="py-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <AdBanner />
                 <AdBanner />
             </div>
         </section>
-        {/* ======================================= */}
       </main>
     </>
   );
