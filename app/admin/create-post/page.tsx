@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import slugify from 'slugify';
@@ -20,6 +20,7 @@ import { Toaster, toast } from 'sonner';
 // Rich Text Editor (Markdown)
 import "easymde/dist/easymde.min.css";
 import type { Options } from 'easymde';
+import type { SupabaseClient } from '@supabase/supabase-js'; // <-- අලුතින් එකතු කළා
 
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false });
 
@@ -27,8 +28,8 @@ const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false }
 type Category = { id: number; name: string; };
 type SubCategory = { id: number; name: string; parent_category_id: number; };
 
-// Helper function to generate a unique slug
-const createUniqueSlug = async (title: string): Promise<string> => {
+// ===== වෙනස් කළ තැන 1: Function එකට supabase client එක parameter එකක් විදිහට ගන්නවා =====
+const createUniqueSlug = async (title: string, supabase: SupabaseClient): Promise<string> => {
     const baseSlug = slugify(title, { lower: true, strict: true });
     let finalSlug = baseSlug;
     let counter = 2;
@@ -54,6 +55,7 @@ const createUniqueSlug = async (title: string): Promise<string> => {
 };
 
 export default function CreatePostPage() {
+    const supabase = createClient();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
@@ -102,7 +104,7 @@ export default function CreatePostPage() {
         imageMaxSize: 10 * 1024 * 1024, // 10MB
         toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "table", "|", "preview", "side-by-side", "fullscreen", "|", "guide"],
         imageTexts: { sbInit: "Drop an image here to upload it..." },
-    }), []);
+    }), [supabase]);
 
     useEffect(() => {
         async function fetchData() {
@@ -112,7 +114,7 @@ export default function CreatePostPage() {
             setSubCategories(subCatData || []);
         }
         fetchData();
-    }, []);
+    }, [supabase]);
 
     useEffect(() => {
         const categoryId = parseInt(selectedCategory);
@@ -198,7 +200,8 @@ export default function CreatePostPage() {
         
         startTransition(async () => {
             try {
-                const slug = await createUniqueSlug(title);
+                // ===== වෙනස් කළ තැන 2: function එක call කරනකොට supabase client එක යවනවා =====
+                const slug = await createUniqueSlug(title, supabase);
 
                 let finalImageUrl = imageUrl;
                 if (imageFile) {

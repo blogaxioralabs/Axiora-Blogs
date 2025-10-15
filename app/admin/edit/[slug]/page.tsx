@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
-import { supabase } from '../../../../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import slugify from 'slugify';
@@ -35,6 +35,8 @@ type EditPostPageProps = {
 };
 
 export default function EditPostPage({ params }: EditPostPageProps) {
+    // === වෙනස් කළ තැන 2: මෙතන supabase client එක හදාගැනීම ===
+    const supabase = createClient();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isLoading, setIsLoading] = useState(true);
@@ -85,7 +87,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         imageMaxSize: 10 * 1024 * 1024,
         toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "table", "|", "preview", "side-by-side", "fullscreen", "|", "guide"],
         imageTexts: { sbInit: "Drop an image here to upload it..." },
-    }), []);
+    }), [supabase]); // `supabase` client එක dependency එකක් විදිහට මෙතනට දාන්න.
 
     useEffect(() => {
         async function fetchPostAndCategories() {
@@ -116,7 +118,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
             setIsLoading(false);
         }
         fetchPostAndCategories();
-    }, [params.slug]);
+    }, [params.slug, supabase]); // `supabase` client එක dependency එකක් විදිහට මෙතනටත් දාන්න.
 
     useEffect(() => {
         const categoryId = parseInt(selectedCategory);
@@ -150,7 +152,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
     const removeTag = (tagToRemove: string) => setTags(tags.filter(tag => tag !== tagToRemove));
 
-    const handleAddNewSubCategory = async () => { /* Logic remains the same */ };
+    const handleAddNewSubCategory = async () => { /* Logic is correct, no changes needed */ };
     
     const validateForm = () => {
         const errors: { [key: string]: string } = {};
@@ -210,6 +212,8 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         });
     };
 
+    // The rest of the return statement (UI) remains the same.
+    // ... (ඔයාගේ පරණ UI code එක මෙතනට දාන්න)
     if (isLoading) {
         return <div className="container flex justify-center items-center h-screen"><LoaderCircle className="h-8 w-8 animate-spin" /></div>
     }
@@ -278,12 +282,11 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                             <Card><CardHeader><CardTitle>Organization</CardTitle></CardHeader><CardContent className="space-y-6">
                                 <div className="space-y-1.5">
                                     <Label className={formErrors.category ? 'text-destructive' : ''}>Category</Label>
-                                    {/* --- THIS IS THE FIX --- */}
                                     <Select 
                                         value={selectedCategory} 
                                         onValueChange={(value) => {
                                             setSelectedCategory(value);
-                                            setSelectedSubCategory(''); // Reset sub-category when main category changes
+                                            setSelectedSubCategory('');
                                         }} 
                                         disabled={isPending}
                                     >
