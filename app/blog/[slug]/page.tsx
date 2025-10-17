@@ -16,6 +16,7 @@ import { CitationGenerator } from '@/components/CitationGenerator';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { AIQueryButtons } from '@/components/AskAIButtons'; 
+import QuizGenerator from "@/components/QuizGenerator";
 
 type PostPageProps = {
   params: { slug: string };
@@ -163,6 +164,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 <AIQueryButtons title={post.title} url={url} content={post.content || ''} />
 
                 <ShareButtons title={post.title} />
+                <QuizGenerator postContent={post.content} postTitle={post.title} />
                 <LikeButton postId={post.id} initialLikes={post.like_count || 0} />
                 <CommentSection postId={post.id} />
                 <CitationGenerator post={post} />
