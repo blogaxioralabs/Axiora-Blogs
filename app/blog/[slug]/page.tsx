@@ -49,7 +49,8 @@ const MarkdownImage = ({ src, alt }: { src?: string; alt?: string; }) => {
                 alt={alt || 'Blog content image'}
                 width={800}
                 height={450}
-                className="w-full h-auto object-cover rounded-lg"
+                className="w-full h-auto object-cover"
+                sizes="(max-width: 768px) 100vw, 800px"
             />
             {alt && <figcaption className="text-center text-sm text-muted-foreground mt-2">{alt}</figcaption>}
         </figure>
@@ -64,7 +65,7 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   const siteUrl = 'https://axiora-blogs.vercel.app';
-  const url = `${siteUrl}/blog/${post.slug}`; // CHANGE: Define URL here to reuse it
+  const url = `${siteUrl}/blog/${post.slug}`;
   const excerpt = createExcerpt(post.content || '');
   const jsonLd = {
       '@context': 'https://schema.org',
@@ -131,6 +132,7 @@ export default async function PostPage({ params }: PostPageProps) {
                         height={675}
                         className="w-full h-auto rounded-lg shadow-lg mb-8"
                         priority
+                        sizes="(max-width: 1024px) 100vw, 1200px"
                     />
                 )}
 
@@ -158,9 +160,7 @@ export default async function PostPage({ params }: PostPageProps) {
                     </div>
                 )}
                 
-                {/* --- CHANGE: ADDED AI QUERY BUTTONS HERE --- */}
                 <AIQueryButtons title={post.title} url={url} content={post.content || ''} />
-                {/* ------------------------------------------- */}
 
                 <ShareButtons title={post.title} />
                 <LikeButton postId={post.id} initialLikes={post.like_count || 0} />

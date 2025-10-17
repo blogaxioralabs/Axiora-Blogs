@@ -75,22 +75,28 @@
   body {
     @apply bg-background text-foreground;
   }
-
+  
+  /* Improves readability on all screen sizes */
   .prose p {
     @apply text-left sm:text-justify;
   }
 }
 
 @layer components {
-  /* --- UPDATED: Simplified Image Styling --- */
+  /* Styling for images inside markdown content */
   .prose .content-image {
-    @apply w-full my-8 rounded-lg shadow-lg; /* my-8 adds vertical space */
+    @apply w-full my-8 rounded-lg shadow-lg overflow-hidden;
   }
 
   .prose .content-image figure {
-    @apply m-0; /* Reset default figure margin */
+    @apply m-0;
+  }
+  
+  .prose .content-image img {
+    @apply w-full h-auto object-cover;
   }
 }
+
 
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {

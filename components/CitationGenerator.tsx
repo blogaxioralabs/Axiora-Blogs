@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, Copy, BookOpen } from 'lucide-react';
+import ReactMarkdown from 'react-markdown'; // <-- 1. මෙතන import කරන්න
 
 interface PostDetails {
     title: string;
@@ -93,9 +94,13 @@ export function CitationGenerator({ post }: { post: PostDetails }) {
                 {citationStyles.map((style) => (
                     <TabsContent key={style.id} value={style.id}>
                         <div className="relative mt-2 rounded-lg border bg-background p-4 pr-16 font-mono text-sm shadow-inner min-h-[80px]">
-                            <p className="whitespace-pre-wrap break-words leading-relaxed">
-                                {isLoading ? 'Generating...' : (citations[style.id] || '').trim()}
-                            </p>
+                            {/* --- 2. මෙතන <p> එක වෙනුවට <ReactMarkdown> යොදන්න --- */}
+                            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:m-0">
+                                <ReactMarkdown>
+                                    {isLoading ? 'Generating...' : (citations[style.id] || '').trim()}
+                                </ReactMarkdown>
+                            </div>
+                            {/* ---------------------------------------------------- */}
                             <Button
                                 size="icon"
                                 variant="ghost"
