@@ -1,3 +1,5 @@
+// Axiora Blogs/app/blog/[slug]/page.tsx
+
 import { supabase } from '../../../lib/supabaseClient';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
@@ -13,6 +15,7 @@ import { RelatedPosts } from '@/components/RelatedPosts';
 import { CitationGenerator } from '@/components/CitationGenerator';
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import { AIQueryButtons } from '@/components/AskAIButtons'; 
 
 type PostPageProps = {
   params: { slug: string };
@@ -36,7 +39,6 @@ async function getPost(slug: string) {
   return post;
 }
 
-// --- UPDATED & SIMPLIFIED: Custom Image Component for ReactMarkdown ---
 const MarkdownImage = ({ src, alt }: { src?: string; alt?: string; }) => {
     if (!src) return null;
 
@@ -62,6 +64,7 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   const siteUrl = 'https://axiora-blogs.vercel.app';
+  const url = `${siteUrl}/blog/${post.slug}`; // CHANGE: Define URL here to reuse it
   const excerpt = createExcerpt(post.content || '');
   const jsonLd = {
       '@context': 'https://schema.org',
@@ -154,6 +157,10 @@ export default async function PostPage({ params }: PostPageProps) {
                         ))}
                     </div>
                 )}
+                
+                {/* --- CHANGE: ADDED AI QUERY BUTTONS HERE --- */}
+                <AIQueryButtons title={post.title} url={url} content={post.content || ''} />
+                {/* ------------------------------------------- */}
 
                 <ShareButtons title={post.title} />
                 <LikeButton postId={post.id} initialLikes={post.like_count || 0} />

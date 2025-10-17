@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { HeroSearchbar } from './HeroSearchbar';
 import { AnimatedTitle } from './AnimatedTitle';
 import { AnimatedSubtitle } from './AnimatedSubtitle';
-import { ArrowDown, FlaskConical, Cpu, HardHat, Sigma } from 'lucide-react';
+import { ArrowDown, FlaskConical, Cpu, HardHat, Sigma, Sparkles } from 'lucide-react'; // <-- Sparkles import කරගන්න
 
 export function HeroSection() {
   const scrollToPosts = () => {
@@ -18,22 +18,30 @@ export function HeroSection() {
 
   return (
     <section className="relative w-full h-[calc(100vh-4rem)] flex items-center justify-center overflow-hidden">
-      {/* Themed Background with Grid and Center Blur */}
       <div className="absolute inset-0 bg-background -z-10">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.4)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.4)_1px,transparent_1px)] bg-[size:24px_24px]"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,hsl(var(--secondary)),transparent)] opacity-50 dark:opacity-30"></div>
-        
-        {/* This div creates a smooth fade from the hero background to the page background */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background to-transparent" />
-        
       </div>
       
       <div className="container text-center flex flex-col items-center px-4 z-10">
         
+        {/* --- අලුතින් එකතු කළ කොටස --- */}
+        <motion.div
+          initial={{ opacity: 0, y: -20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.2 }}
+        >
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary backdrop-blur-sm">
+            <Sparkles className="h-4 w-4" />
+            <span>Pioneering AI in Sri Lankan Blogging</span>
+          </div>
+        </motion.div>
+        {/* --------------------------- */}
+        
         <AnimatedTitle />
         <AnimatedSubtitle />
         
-        {/* Search Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -43,7 +51,6 @@ export function HeroSection() {
           <HeroSearchbar />
         </motion.div>
 
-        {/* Category Buttons */}
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -68,7 +75,6 @@ export function HeroSection() {
             </Link>
         </motion.div>
 
-        {/* Explore Articles Button */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

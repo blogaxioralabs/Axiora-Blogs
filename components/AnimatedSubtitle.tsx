@@ -21,8 +21,8 @@ const letter = {
   },
 };
 
-const line1 = "Exploring the frontiers of";
-const line2 = "Science, Technology, Engineering, and Mathematics.";
+const line1 = "Navigate the future of STEM with";
+const line2 = "Sri Lanka's pioneering AI-powered blog.";
 
 export function AnimatedSubtitle() {
   return (
