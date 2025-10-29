@@ -1,6 +1,7 @@
 import { supabase } from '../../../lib/supabaseClient';
 import { AnimatedPostCard } from '@/components/AnimatedPostCard';
 import { notFound } from 'next/navigation';
+import { BackButton } from '@/components/BackButton';
 
 type TagPageProps = {
   params: { slug: string };
@@ -40,7 +41,11 @@ export default async function TagPage({ params }: TagPageProps) {
     if (!tag) notFound();
 
     return (
-        <div className="container py-12">
+        
+        <div className="container py-8 md:py-12">
+            <div className="mb-4">
+    <BackButton />
+</div>
             <h1 className="text-4xl font-bold mb-8">
                 Posts tagged: <span className="text-primary">#{tag.name}</span>
             </h1>

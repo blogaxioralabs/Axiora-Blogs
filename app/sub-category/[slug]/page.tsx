@@ -1,6 +1,7 @@
 import { supabase } from '../../../lib/supabaseClient';
 import PostCard from '@/components/PostCard';
 import { notFound } from 'next/navigation';
+import { BackButton } from '@/components/BackButton';
 
 type SubCategoryPageProps = {
   params: { slug: string };
@@ -30,7 +31,10 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
     if (!subCategory) notFound();
 
     return (
-        <div className="container py-12">
+        <div className="container py-8 md:py-12">
+            <div className="mb-4">
+     <BackButton />
+ </div>
             <h1 className="text-4xl font-bold mb-8">
                 Tag: <span className="text-primary">#{subCategory.name}</span>
             </h1>
