@@ -1,205 +1,116 @@
-// Axiora Blogs/app/blog/[slug]/page.tsx
-
-import { supabase } from '../../../lib/supabaseClient';
+// app/blog/[slug]/page.tsx
+import { createClient } from '@/lib/supabase/server'; 
 import { notFound } from 'next/navigation';
-import ReactMarkdown from 'react-markdown';
-import rehypePrism from 'rehype-prism-plus';
-import 'prismjs/themes/prism-tomorrow.css';
-import { ShareButtons } from '@/components/ShareButtons';
-import { ViewCounter } from '@/components/ViewCounter';
-import { Eye, UserCircle } from 'lucide-react';
-import Link from 'next/link';
-import { LikeButton } from '@/components/LikeButton';
-import { CommentSection } from '@/components/CommentSection';
-import { RelatedPosts } from '@/components/RelatedPosts';
-import { CitationGenerator } from '@/components/CitationGenerator';
-import type { Metadata } from 'next';
-import Image from 'next/image';
-import { AIQueryButtons } from '@/components/AskAIButtons'; 
-import QuizGenerator from "@/components/QuizGenerator";
+import BlogPostClient from './BlogPostClient';
+import { RelatedPosts } from '@/components/RelatedPosts'; 
+import type { Post } from '@/lib/types'; 
+import type { Metadata, ResolvingMetadata } from 'next'; 
 
-type PostPageProps = {
-  params: { slug: string };
-};
 
-function createExcerpt(content: string, length = 155): string {
-    if (!content) return '';
-    const strippedContent = content.replace(/(\r\n|\n|\r|#|\[.*?\]\(.*?\)|!\[.*?\]\(.*?\))/gm, " ").replace(/\s+/g, ' ').trim();
-    if (strippedContent.length <= length) return strippedContent;
-    return strippedContent.substring(0, strippedContent.lastIndexOf(' ', length)) + '...';
+async function getPostData(slug: string): Promise<Post | null> {
+    const supabase = createClient(); 
+    const { data: postData, error } = await supabase
+        .from('posts')
+        .select(`*,
+                 like_count,
+                 view_count,
+                 categories ( name ),
+                 sub_categories ( name, slug ),
+                 tags ( id, name, slug )`)
+        .eq('slug', slug)
+        .single();
+
+    if (error || !postData) {
+        console.error("Server Error fetching post:", error?.message || "Post data is null");
+        return null;
+    }
+    return postData as Post;
 }
 
-async function getPost(slug: string) {
-  const { data: post, error } = await supabase
-    .from('posts')
-    .select(`*, like_count, view_count, categories ( name ), sub_categories ( name, slug ), tags ( id, name, slug )`)
-    .eq('slug', slug)
-    .single();
 
-  if (error || !post) return null;
-  return post;
-}
-
-const MarkdownImage = ({ src, alt }: { src?: string; alt?: string; }) => {
-    if (!src) return null;
-
-    return (
-        <figure className="content-image">
-            <Image
-                src={src}
-                alt={alt || 'Blog content image'}
-                width={800}
-                height={450}
-                className="w-full h-auto object-cover"
-                sizes="(max-width: 768px) 100vw, 800px"
-            />
-            {alt && <figcaption className="text-center text-sm text-muted-foreground mt-2">{alt}</figcaption>}
-        </figure>
-    );
-};
-
-export default async function PostPage({ params }: PostPageProps) {
-  const post = await getPost(params.slug);
+export async function generateMetadata(
+  { params }: { params: { slug: string } },
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const post = await getPostData(params.slug);
 
   if (!post) {
-    notFound();
+    return {
+      title: 'Post Not Found | Axiora Blogs',
+      description: 'The blog post you are looking for could not be found.',
+    }
+  }
+  
+  function createExcerpt(content: string, length = 155): string {
+      if (!content) return '';
+
+      const strippedContent = content
+          .replace(/!\[.*?\]\(.*?\)/g, '') 
+          .replace(/\[(.*?)\]\(.*?\)/g, '$1') 
+          .replace(/<[^>]*>/g, '') 
+          .replace(/(\r\n|\n|\r)/gm, " ")
+          .replace(/#+\s/g, '') 
+          .replace(/[`*_\-~|]/g, '') 
+          .replace(/\s+/g, ' ').trim(); 
+      if (strippedContent.length <= length) return strippedContent;
+      const trimmed = strippedContent.substring(0, length);
+      // Ensure trimming doesn't cut a word in half
+      return trimmed.substring(0, Math.min(trimmed.length, trimmed.lastIndexOf(' '))) + '...';
   }
 
-  const siteUrl = 'https://axiora-blogs.vercel.app';
+  const description = createExcerpt(post.content || '');
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiora-blogs.vercel.app';
   const url = `${siteUrl}/blog/${post.slug}`;
-  const excerpt = createExcerpt(post.content || '');
-  const jsonLd = {
-      '@context': 'https://schema.org',
-      '@type': 'Article',
-      'headline': post.title,
-      'image': post.image_url || `${siteUrl}/axiora-logo.png`,
-      'author': {
-          '@type': 'Person',
-          'name': post.author_name || 'Axiora Labs',
-      },
-      'publisher': {
-          '@type': 'Organization',
-          'name': 'Axiora Blogs',
-          'logo': {
-              '@type': 'ImageObject',
-              'url': `${siteUrl}/axiora-logo.png`,
-          },
-      },
-      'datePublished': new Date(post.created_at).toISOString(),
-      'description': excerpt,
-  };
+  const imageUrl = post.image_url || `${siteUrl}/axiora-og-image.png`;
 
-  return (
-    <>
-        <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+  // --- Keywords හදන තැන වෙනස් කළා ---
+  const keywords = ['Axiora Blogs'];
+  if (post.categories?.name) {
+    keywords.push(post.categories.name); // category එකක් තියෙනවනම් විතරක් දානවා
+  }
+  keywords.push(...(post.tags?.map(tag => tag.name) || [])); // tags තියෙනවනම් විතරක් දානවා
+  keywords.push(...post.title.split(' ')); // title එකේ වචන ටික දානවා
+  // --- වෙනස මෙතනින් ඉවරයි ---
 
-        <div className="container max-w-4xl py-12">
-            <ViewCounter postId={post.id} />
-            <article>
-                <header className="mb-8">
-                    {post.categories && (
-                        <p className="text-primary font-semibold mb-2">{post.categories.name}</p>
-                    )}
-                    <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
-                        {post.title}
-                    </h1>
-                    <div className="flex flex-wrap items-center text-muted-foreground mt-4 text-sm gap-x-4 gap-y-2">
-                        {post.author_name && (
-                             <div className="flex items-center gap-1.5">
-                                <UserCircle className="h-4 w-4" />
-                                <span>{post.author_name}</span>
-                            </div>
-                        )}
-                        <span>
-                            Posted on {new Date(post.created_at).toLocaleDateString('en-US', {
-                                year: 'numeric', month: 'long', day: 'numeric',
-                            })}
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                            <Eye className="h-4 w-4" />
-                            <span>{post.view_count || 0} views</span>
-                        </div>
-                    </div>
-                </header>
-
-                {post.image_url && (
-                    <Image
-                        src={post.image_url}
-                        alt={`${post.title} - Main image`}
-                        width={1200}
-                        height={675}
-                        className="w-full h-auto rounded-lg shadow-lg mb-8"
-                        priority
-                        sizes="(max-width: 1024px) 100vw, 1200px"
-                    />
-                )}
-
-                <div className="prose dark:prose-invert max-w-none">
-                    <ReactMarkdown
-                        rehypePlugins={[rehypePrism]}
-                        components={{
-                            img: MarkdownImage,
-                        }}
-                    >
-                        {post.content || ''}
-                    </ReactMarkdown>
-                </div>
-
-                {post.tags && post.tags.length > 0 && (
-                    <div className="mt-6 pt-6 border-t flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold mr-2">Tags:</span>
-                        {post.tags.map((tag: { id: number; name: string; slug: string; }) => (
-                            <Link key={tag.id} href={`/tag/${tag.slug}`}>
-                               <span className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5 rounded-full hover:bg-secondary/80 transition-colors">
-                                    #{tag.name}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-                
-                <AIQueryButtons title={post.title} url={url} content={post.content || ''} />
-
-                <ShareButtons title={post.title} />
-                <QuizGenerator postContent={post.content} postTitle={post.title} />
-                <LikeButton postId={post.id} initialLikes={post.like_count || 0} />
-                <CommentSection postId={post.id} />
-                <CitationGenerator post={post} />
-            </article>
-        </div>
-
-        <RelatedPosts currentPostId={post.id} />
-    </>
-  );
+  return {
+    title: post.title,
+    description: description,
+    openGraph: {
+        title: `${post.title} | Axiora Blogs`,
+        description: description,
+        url: url,
+        siteName: 'Axiora Blogs',
+        images: [ { url: imageUrl, width: 1200, height: 630, alt: post.title, } ],
+        locale: 'en_US',
+        type: 'article',
+        publishedTime: post.created_at,
+        authors: [post.author_name || 'Axiora Labs'],
+        tags: post.tags?.map(tag => tag.name),
+        ...(post.categories?.name && { section: post.categories.name }),
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: `${post.title} | Axiora Blogs`,
+        description: description,
+        images: [imageUrl],
+    },
+    alternates: { canonical: url, },
+    keywords: keywords, // හදපු keywords array එක මෙතනට දානවා
+  }
 }
 
-export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
-    const post = await getPost(params.slug);
-    if (!post) { return { title: 'Post Not Found' }; }
-    const excerpt = createExcerpt(post.content || '');
-    const siteUrl = 'https://axiora-blogs.vercel.app';
+// ... (Default export BlogPostPage function එක එහෙමම තියන්න)
+export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+    const post = await getPostData(params.slug);
 
-    return {
-        title: post.title,
-        description: excerpt,
-        alternates: {
-            canonical: `${siteUrl}/blog/${post.slug}`,
-        },
-        openGraph: {
-            title: post.title,
-            description: excerpt,
-            url: `${siteUrl}/blog/${post.slug}`,
-            type: 'article',
-            images: [{ url: post.image_url || `${siteUrl}/axiora-logo.png` }],
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: post.title,
-            description: excerpt,
-            images: [post.image_url || `${siteUrl}/axiora-logo.png`],
-        },
-    };
+    if (!post) {
+        notFound();
+    }
+
+    return (
+        <>
+            <BlogPostClient initialPost={post} />
+            <RelatedPosts currentPostId={post.id} />
+        </>
+    );
 }
