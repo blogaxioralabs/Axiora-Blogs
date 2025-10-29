@@ -6,7 +6,6 @@ import { RelatedPosts } from '@/components/RelatedPosts';
 import type { Post } from '@/lib/types'; 
 import type { Metadata, ResolvingMetadata } from 'next'; 
 
-
 async function getPostData(slug: string): Promise<Post | null> {
     const supabase = createClient(); 
     const { data: postData, error } = await supabase

@@ -60,13 +60,13 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Redirect logged-in users from auth pages to admin
+  // Redirect logged-in users from auth pages to dashboard
   if ((pathname === '/login' || pathname === '/register') && session) {
-    return NextResponse.redirect(new URL('/admin/create-post', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Protect admin routes
-  if (pathname.startsWith('/admin') && !session) {
+  // Protect dashboard routes
+  if (pathname.startsWith('/dashboard') && !session) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

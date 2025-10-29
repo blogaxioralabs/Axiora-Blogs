@@ -224,7 +224,7 @@ export default function BlogPostClient({ initialPost }: { initialPost: Post }) {
                     <CommentSection postId={post.id} />
                     <CitationGenerator post={{
                         title: post.title,
-                        author_name: post.author_name,
+                        author_name: post.author_name ?? undefined,
                         created_at: post.created_at,
                         slug: post.slug
                     }} />

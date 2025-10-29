@@ -3,19 +3,8 @@
 import * as React from 'react';
 import Autoplay from 'embla-carousel-autoplay';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import FeaturedPost from './FeaturedPost'; // The component we just updated
-
-// Define the Post type again for this component
-interface Post {
-    id: number;
-    title: string;
-    slug: string;
-    image_url?: string;
-    created_at: string;
-    categories?: { name: string };
-    content?: string;
-    category_id: number;
-}
+import FeaturedPost from './FeaturedPost';
+import type { Post } from '@/lib/types';
 
 export function FeaturedPostSlider({ posts }: { posts: Post[] }) {
   // Setup the autoplay plugin

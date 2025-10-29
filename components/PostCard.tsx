@@ -5,20 +5,8 @@ import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 import Image from 'next/image';
 import { ArrowRight, UserCircle, CalendarDays, Heart } from 'lucide-react';
+import type { Post } from '@/lib/types';
 
-interface Post {
-    id: number;
-    title: string;
-    slug: string;
-    image_url?: string;
-    created_at: string;
-    categories?: { name: string };
-    sub_categories?: { name: string, slug: string };
-    content?: string;
-    author_name?: string;
-    like_count?: number;
-    
-}
 
 function getPostExcerpt(content: string, length = 100): string {
     if (!content) return '';

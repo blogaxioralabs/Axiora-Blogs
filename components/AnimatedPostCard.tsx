@@ -2,18 +2,7 @@
 
 import { motion, Variants } from 'framer-motion';
 import PostCard from './PostCard'; 
-
-// Define the Post type again for this component
-interface Post {
-    id: number;
-    title: string;
-    slug: string;
-    image_url?: string;
-    created_at: string;
-    categories?: { name: string };
-    sub_categories?: { name: string, slug: string };
-    content?: string;
-}
+import type { Post } from '@/lib/types';
 
 // Define the animation properties
 const cardVariants: Variants = {

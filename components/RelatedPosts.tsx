@@ -1,20 +1,7 @@
 // components/RelatedPosts.tsx
 import { supabase } from '@/lib/supabaseClient';
 import { AnimatedPostCard } from './AnimatedPostCard';
-
-
-interface Post {
-    id: number;
-    title: string;
-    slug: string;
-    image_url?: string;
-    created_at: string;
-    categories?: { name: string };
-    sub_categories?: { name: string, slug: string };
-    content?: string;
-    author_name?: string;
-    like_count?: number;
-}
+import type { Post } from '@/lib/types';
 
 interface RelatedPostsProps {
     currentPostId: number;
