@@ -18,7 +18,7 @@ async function getSubCategoryData(slug: string) {
 
     const { data: posts, error: postError } = await supabase
         .from('posts')
-        .select('*, like_count, categories(name), sub_categories(name, slug)')
+        .select('*, categories(name), sub_categories(name, slug), profiles(avatar_url, full_name)')
         .eq('sub_category_id', subCategory.id)
         .order('created_at', { ascending: false });
 

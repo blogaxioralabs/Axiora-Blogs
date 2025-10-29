@@ -26,7 +26,7 @@ async function getPageData() {
   const [postsRes, catRes, subCatRes, trendingNews] = await Promise.all([
     supabase
       .from('posts')
-      .select('*, like_count, categories(name), sub_categories(name, slug)')
+      .select('*, categories(name), sub_categories(name, slug), profiles(avatar_url, full_name)')
       .order('created_at', { ascending: false }),
     supabase.from('categories').select('id, name'),
     supabase.from('sub_categories').select('id, name, parent_category_id'), 

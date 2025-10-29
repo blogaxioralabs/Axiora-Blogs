@@ -12,7 +12,7 @@ async function searchPosts(query: string) {
 
     const { data, error } = await supabase
         .from('posts')
-        .select('*, like_count, categories(name), sub_categories(name, slug)')
+        .select('*, categories(name), sub_categories(name, slug), profiles(avatar_url, full_name)')
         .or(`title.ilike.%${query}%,content.ilike.%${query}%`) 
         .order('created_at', { ascending: false });
 

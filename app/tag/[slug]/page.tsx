@@ -28,7 +28,7 @@ async function getTagData(slug: string) {
 
     const { data: posts, error: postsError } = await supabase
         .from('posts')
-        .select('*, like_count, categories(name), sub_categories(name, slug)')
+        .select('*, categories(name), sub_categories(name, slug), profiles(avatar_url, full_name)')
         .in('id', postIds)
         .order('created_at', { ascending: false });
 
