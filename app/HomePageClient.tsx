@@ -67,12 +67,6 @@ export default function HomePageClient({
         <section id="latest-posts">
           <div className="flex flex-col items-start gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-3xl font-bold tracking-tight">Latest Posts</h2>
-            <CategoryFilter
-                categories={initialCategories}
-                subCategories={initialSubCategories}
-                selectedValue={selectedValue}
-                setSelectedValue={setSelectedValue}
-            />
           </div>
 
           {latestPosts.length > 0 ? (

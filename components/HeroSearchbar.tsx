@@ -1,3 +1,5 @@
+// Axiora-Blogs/components/HeroSearchbar.tsx
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -9,11 +11,12 @@ export function HeroSearchbar() {
     const router = useRouter();
     const [query, setQuery] = useState('');
 
+
     const handleSearch = useDebouncedCallback((term: string) => {
-        if (term) {
+        if (term.length >= 3) {
             router.push(`/search?q=${term}`);
         }
-    }, 300);
+    }, 500);
 
     return (
         <div className="relative group">
