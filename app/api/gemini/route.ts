@@ -60,7 +60,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("[GEMINI_API_ERROR]", error);
-    // දෝෂය කුමක්දැයි client එකට යවනවා
     return NextResponse.json({ error: `An internal server error occurred: ${error.message}` }, { status: 500 });
   }
 }
