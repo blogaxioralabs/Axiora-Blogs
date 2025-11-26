@@ -112,3 +112,13 @@
     @apply bg-primary/50;
   }
 }
+
+.editor-toolbar.fullscreen,
+.EasyMDEContainer .CodeMirror-fullscreen {
+  z-index: 100 !important; /* Navbar එක z-50 නිසා, ඊට වඩා වැඩි අගයක් දෙන්න ඕනේ */
+}
+
+/* Optional: Editor එකේ පෙනුම තව ටිකක් professional කරන්න */
+.EasyMDEContainer .CodeMirror {
+  border-radius: 0.5rem; /* Rounded corners */
+}
