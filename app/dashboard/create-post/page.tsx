@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import slugify from 'slugify';
 import dynamic from 'next/dynamic';
-import Link from 'next/link'; // Import Link
+import Link from 'next/link';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -16,21 +16,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { UploadCloud, LoaderCircle, Image as ImageIcon, X, AlertCircle, PlusCircle, Info, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
+import { UploadCloud, LoaderCircle, Image as ImageIcon, X, AlertCircle, PlusCircle, Info, ArrowLeft } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
 // Rich Text Editor (Markdown)
 import "easymde/dist/easymde.min.css";
 import type { Options } from 'easymde';
-import type { SupabaseClient, User } from '@supabase/supabase-js'; // <-- User type එකත් import කරන්න
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 
+// Dynamically import SimpleMDE to avoid SSR issues
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false });
 
 // Types
 type Category = { id: number; name: string; };
 type SubCategory = { id: number; name: string; parent_category_id: number; };
 
-// Function to create a unique slug (remains the same)
+// Function to create a unique slug
 const createUniqueSlug = async (title: string, supabase: SupabaseClient): Promise<string> => {
     const baseSlug = slugify(title, { lower: true, strict: true });
     let finalSlug = baseSlug;
@@ -54,7 +55,6 @@ const createUniqueSlug = async (title: string, supabase: SupabaseClient): Promis
     }
 };
 
-
 export default function CreatePostPage() {
     const supabase = createClient();
     const router = useRouter();
@@ -66,7 +66,7 @@ export default function CreatePostPage() {
     const [content, setContent] = useState('');
     const [authorName, setAuthorName] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
-    const [selectedSubCategory, setSelectedSubCategory] = useState<string>(''); // Default to empty string
+    const [selectedSubCategory, setSelectedSubCategory] = useState<string>('');
     const [isFeatured, setIsFeatured] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imageUrl, setImageUrl] = useState('');
@@ -112,6 +112,7 @@ export default function CreatePostPage() {
         handleUpload();
     };
 
+    // --- ENHANCED EDITOR OPTIONS (WORD-LIKE FEATURES) ---
     const mdeOptions = useMemo((): Options => ({
         autofocus: true,
         spellChecker: false,
@@ -119,7 +120,17 @@ export default function CreatePostPage() {
         imageUploadFunction: imageUploadFunction,
         imageAccept: "image/png, image/jpeg, image/gif, image/webp",
         imageMaxSize: 10 * 1024 * 1024,
-        toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "table", "|", "preview", "side-by-side", "fullscreen", "|", "guide"],
+        placeholder: "Start writing your amazing article here...",
+        minHeight: "400px", // Bigger default height
+        // Full Toolbar Configuration
+        toolbar: [
+            "bold", "italic", "strikethrough", "heading", "|", 
+            "quote", "code", "unordered-list", "ordered-list", "clean-block", "|", 
+            "link", "image", "table", "horizontal-rule", "|", 
+            "preview", "side-by-side", "fullscreen", "|", 
+            "guide"
+        ],
+        status: ["autosave", "lines", "words", "cursor"], // Show stats at bottom
         imageTexts: { sbInit: "Drop an image here to upload it..." },
     }), [supabase, currentUser?.id]);
 
@@ -140,12 +151,11 @@ export default function CreatePostPage() {
         } else {
             setFilteredSubCategories([]);
         }
-        // When category changes, reset sub-category selection ONLY IF the current sub-category doesn't belong to the new category
         const currentSubCat = subCategories.find(sc => String(sc.id) === selectedSubCategory);
         if (currentSubCat && currentSubCat.parent_category_id !== categoryId) {
-             setSelectedSubCategory(''); // Reset if sub-category is no longer valid
+             setSelectedSubCategory('');
         }
-    }, [selectedCategory, subCategories, selectedSubCategory]); // Added selectedSubCategory dependency
+    }, [selectedCategory, subCategories, selectedSubCategory]);
 
     const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -208,8 +218,8 @@ export default function CreatePostPage() {
         } else {
             toast.success(`Sub-category "${newName}" added successfully!`);
             const newSubCats = [...subCategories, data];
-            setSubCategories(newSubCats); // Update full list
-            setFilteredSubCategories(newSubCats.filter(sc => sc.parent_category_id === parentId)); // Update filtered list
+            setSubCategories(newSubCats);
+            setFilteredSubCategories(newSubCats.filter(sc => sc.parent_category_id === parentId));
             setSelectedSubCategory(String(data.id));
             setNewSubCategoryInput('');
         }
@@ -250,9 +260,7 @@ export default function CreatePostPage() {
                     author_name: authorName.trim(),
                     image_url: finalImageUrl || null,
                     category_id: parseInt(selectedCategory),
-                    // --- CHANGE HERE: Handle "none" value ---
                     sub_category_id: (selectedSubCategory && selectedSubCategory !== 'none') ? parseInt(selectedSubCategory) : null,
-                    // --- END CHANGE ---
                     is_featured: isFeatured,
                 }).select('id').single();
 
@@ -304,23 +312,27 @@ export default function CreatePostPage() {
                     {/* Main Content Column */}
                     <div className="lg:col-span-2 space-y-6">
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                            <Card><CardContent className="p-6 space-y-6">
+                            <Card className="border-t-4 border-t-primary shadow-lg"><CardContent className="p-6 space-y-6">
                                 {/* Title */}
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="title" className={formErrors.title ? 'text-destructive' : ''}>Post Title</Label>
-                                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., The Future of Quantum Computing" required disabled={isPending} />
+                                    <Label htmlFor="title" className="text-lg font-semibold">Post Title</Label>
+                                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., The Future of Quantum Computing" required disabled={isPending} className="text-lg h-12" />
                                     {formErrors.title && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.title}</p>}
                                 </div>
-                                {/* Content */}
-                                <div>
-                                    <Label htmlFor="content" className={formErrors.content ? 'text-destructive' : ''}>Content</Label>
-                                    <div className="mt-1 prose dark:prose-invert max-w-none [&_.cm-s-easymde]:border [&_.cm-s-easymde]:rounded-md [&_.editor-toolbar]:rounded-t-md"><SimpleMDE options={mdeOptions} value={content} onChange={setContent} /></div>
+                                
+                                {/* Content - The Enhanced Editor */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="content" className="text-lg font-semibold">Article Content</Label>
+                                    <div className="prose-editor-wrapper">
+                                        <SimpleMDE options={mdeOptions} value={content} onChange={setContent} />
+                                    </div>
                                     {formErrors.content && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.content}</p>}
+                                    
                                     {/* Pro Tip */}
-                                    <div className="mt-4 flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800 dark:border-sky-800/50 dark:bg-sky-950 dark:text-sky-300">
-                                        <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                                    <div className="mt-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground/80">
+                                        <Info className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
                                         <p>
-                                            <strong>Pro Tip:</strong> Drag and drop images directly into the editor to upload and insert them.
+                                            <strong>Pro Tip:</strong> Use the <strong>"Side-by-Side"</strong> or <strong>"Fullscreen"</strong> buttons in the toolbar for a distraction-free writing experience. Drag & Drop images to upload.
                                         </p>
                                     </div>
                                 </div>
@@ -335,26 +347,28 @@ export default function CreatePostPage() {
                             <Card><CardHeader><CardTitle>Publishing Details</CardTitle></CardHeader><CardContent className="space-y-6">
                                 {/* Author Name */}
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="author_name" className={formErrors.authorName ? 'text-destructive' : ''}>Author Name</Label>
+                                    <Label htmlFor="author_name">Author Name</Label>
                                     <Input id="author_name" value={authorName} onChange={(e) => setAuthorName(e.target.value)} placeholder="Your display name" required disabled={isPending} />
                                     {formErrors.authorName && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.authorName}</p>}
-                                    <p className="text-xs text-muted-foreground pt-1">This name will be displayed publicly on the post.</p>
                                 </div>
                                 {/* Featured Checkbox */}
-                                <div className="flex items-center space-x-2 pt-2">
-                                    <Checkbox id="is_featured" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(!!checked)} disabled={isPending} /><Label htmlFor="is_featured" className="font-medium">Mark as a Featured Post</Label>
+                                <div className="flex items-center space-x-2 border p-3 rounded-md bg-secondary/20">
+                                    <Checkbox id="is_featured" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(!!checked)} disabled={isPending} />
+                                    <Label htmlFor="is_featured" className="font-medium cursor-pointer">Mark as Featured Post</Label>
                                 </div>
                                 {/* Submit Button */}
-                                <Button type="submit" className="w-full font-bold" disabled={isPending || !title || !content}>{isPending ? <><LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Publishing...</> : 'Publish Post'}</Button>
+                                <Button type="submit" className="w-full font-bold h-12 text-base shadow-lg hover:shadow-xl transition-all" disabled={isPending || !title || !content}>
+                                    {isPending ? <><LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> Publishing...</> : 'Publish Post'}
+                                </Button>
                             </CardContent></Card>
                         </motion.div>
 
                         {/* Organization */}
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-                            <Card><CardHeader><CardTitle>Organization</CardTitle></CardHeader><CardContent className="space-y-6">
+                            <Card><CardHeader><CardTitle>Categorization</CardTitle></CardHeader><CardContent className="space-y-6">
                                 {/* Category */}
                                 <div className="space-y-1.5">
-                                    <Label className={formErrors.category ? 'text-destructive' : ''}>Category</Label>
+                                    <Label>Category</Label>
                                     <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isPending}>
                                         <SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger>
                                         <SelectContent>{categories.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}</SelectContent>
@@ -371,25 +385,23 @@ export default function CreatePostPage() {
                                     >
                                         <SelectTrigger><SelectValue placeholder="Select a tag (optional)" /></SelectTrigger>
                                         <SelectContent>
-                                            {/* --- CHANGE HERE: Use value="none" --- */}
                                             <SelectItem value="none">None</SelectItem>
-                                            {/* --- END CHANGE --- */}
                                             {filteredSubCategories.map(sc => <SelectItem key={sc.id} value={String(sc.id)}>{sc.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                     {/* Add New Sub-Category */}
                                     <div className="flex items-center gap-2 mt-2 pt-2 border-t">
-                                        <Input value={newSubCategoryInput} onChange={(e) => setNewSubCategoryInput(e.target.value)} placeholder="Or create new tag" className="h-8 text-xs" disabled={isPending || !selectedCategory} />
+                                        <Input value={newSubCategoryInput} onChange={(e) => setNewSubCategoryInput(e.target.value)} placeholder="New tag name" className="h-8 text-xs" disabled={isPending || !selectedCategory} />
                                         <Button type="button" variant="outline" size="icon" className="h-8 w-8 flex-shrink-0" onClick={handleAddNewSubCategory} disabled={isPending || !selectedCategory || !newSubCategoryInput.trim()} aria-label="Add new sub-category"><PlusCircle size={16} /></Button>
                                     </div>
                                 </div>
                                 {/* Additional Tags */}
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="tags">Additional Tags</Label>
-                                    <div className="flex flex-wrap items-center gap-2 rounded-md border p-2 mt-1">
-                                        {tags.map(tag => (<div key={tag} className="flex items-center gap-1 bg-secondary text-secondary-foreground text-xs font-semibold px-2 py-1 rounded-md">{tag}<button type="button" onClick={() => removeTag(tag)} className="text-muted-foreground hover:text-foreground"><X size={12} /></button></div>))}
-                                        <Input id="tags" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleTagKeyDown} placeholder={tags.length === 0 ? "react, nextjs..." : "Add more..."} className="flex-1 border-0 h-auto p-0 bg-transparent shadow-none focus-visible:ring-0" disabled={isPending} />
-                                    </div><p className="text-xs text-muted-foreground mt-1">Separate with a comma or Enter.</p>
+                                    <Label htmlFor="tags">Keywords (Hashtags)</Label>
+                                    <div className="flex flex-wrap items-center gap-2 rounded-md border p-2 mt-1 min-h-[42px]">
+                                        {tags.map(tag => (<div key={tag} className="flex items-center gap-1 bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full">{tag}<button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive"><X size={12} /></button></div>))}
+                                        <Input id="tags" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleTagKeyDown} placeholder={tags.length === 0 ? "Type and press Enter..." : "Add more..."} className="flex-1 border-0 h-auto p-0 bg-transparent shadow-none focus-visible:ring-0 text-sm" disabled={isPending} />
+                                    </div>
                                 </div>
                             </CardContent></Card>
                         </motion.div>
@@ -398,12 +410,12 @@ export default function CreatePostPage() {
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
                              <Card><CardHeader><CardTitle>Featured Image</CardTitle></CardHeader><CardContent className="space-y-4">
                                 {/* Image Preview */}
-                                <div className="aspect-video rounded-md border-2 border-dashed flex items-center justify-center bg-muted/50 overflow-hidden relative">
+                                <div className="aspect-video rounded-md border-2 border-dashed flex items-center justify-center bg-muted/50 overflow-hidden relative group">
                                      {imagePreview ? (
                                          <>
-                                             <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                             <img src={imagePreview} alt="Preview" className="w-full h-full object-cover transition-opacity group-hover:opacity-90" />
                                              <Button
-                                                 variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7 rounded-full shadow-md"
+                                                 variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                                                  onClick={() => {setImageUrl(''); setImageFile(null); setImagePreview(null);}}
                                                  type="button" aria-label="Remove image"
                                              >
@@ -411,15 +423,15 @@ export default function CreatePostPage() {
                                              </Button>
                                          </>
                                       ) : (
-                                          <div className="text-center text-muted-foreground"><ImageIcon className="mx-auto h-10 w-10 mb-2" /><p className="text-sm">Image Preview</p></div>
+                                          <div className="text-center text-muted-foreground"><ImageIcon className="mx-auto h-10 w-10 mb-2 opacity-50" /><p className="text-sm">No Image Selected</p></div>
                                       )}
                                  </div>
                                 {/* Image URL */}
-                                <Input value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setImageFile(null); setImagePreview(e.target.value || null); }} placeholder="Or paste image URL" disabled={isPending} />
+                                <Input value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setImageFile(null); setImagePreview(e.target.value || null); }} placeholder="Paste image URL..." disabled={isPending} />
                                 {/* Separator */}
                                 <div className="relative text-center"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">OR</span></div></div>
                                 {/* Upload Button */}
-                                <Button asChild variant="outline" className="w-full cursor-pointer"><label htmlFor="image-file"><UploadCloud className="mr-2 h-4 w-4" /> Upload from computer<input id="image-file" type="file" className="sr-only" accept="image/*" onChange={handleImageFileChange} disabled={isPending} /></label></Button>
+                                <Button asChild variant="outline" className="w-full cursor-pointer border-dashed"><label htmlFor="image-file"><UploadCloud className="mr-2 h-4 w-4" /> Upload from Device<input id="image-file" type="file" className="sr-only" accept="image/*" onChange={handleImageFileChange} disabled={isPending} /></label></Button>
                             </CardContent></Card>
                         </motion.div>
                     </div>

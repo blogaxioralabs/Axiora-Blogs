@@ -1,3 +1,4 @@
+// components/PostCard.tsx
 'use client'
 
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import { Button } from './ui/button';
 import Image from 'next/image';
 import { ArrowRight, UserCircle, CalendarDays, Heart } from 'lucide-react';
 import type { Post } from '@/lib/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // <-- Import Avatar components
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Helper function to get initials from name
 const getInitials = (name: string | null | undefined): string => {
@@ -14,12 +15,31 @@ const getInitials = (name: string | null | undefined): string => {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 };
 
+// --- IMPROVED EXCERPT FUNCTION (Fixes Markdown Issue) ---
 function getPostExcerpt(content: string, length = 100): string {
     if (!content) return '';
-    const strippedContent = content.replace(/(\r\n|\n|\r|#|`|---|\|)/gm, " ").replace(/\s+/g, ' ').trim();
+    
+    const strippedContent = content
+        // 1. Remove Markdown formatting symbols
+        .replace(/(\*\*|__)(.*?)\1/g, '$2') // Bold (**text**) -> text
+        .replace(/(\*|_)(.*?)\1/g, '$2')    // Italic (*text*) -> text
+        .replace(/~~(.*?)~~/g, '$1')        // Strikethrough (~~text~~) -> text
+        .replace(/!\[(.*?)\]\(.*?\)/g, '')  // Remove Images completely
+        .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Links [text](url) -> text
+        .replace(/`{1,3}(.*?)`{1,3}/g, '$1') // Inline code `code` -> code
+        // 2. Remove block level elements
+        .replace(/^\s{0,3}(\d+\.\s|[-*+]\s)/gm, '') // List bullets/numbers
+        .replace(/^#+\s+/gm, '')            // Headings (# Heading)
+        .replace(/>/g, '')                  // Blockquotes (>)
+        // 3. Clean up whitespace
+        .replace(/(\r\n|\n|\r)/gm, " ")     // Newlines to spaces
+        .replace(/\s+/g, ' ')               // Multiple spaces to single space
+        .trim();
+
     if (strippedContent.length <= length) return strippedContent;
     return strippedContent.substring(0, strippedContent.lastIndexOf(' ', length)) + '...';
 }
+// ---------------------------------------------------------
 
 function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -30,11 +50,12 @@ function formatDate(dateString: string): string {
 }
 
 export default function PostCard({ post }: { post: Post }) {
+    // Generate clean excerpt
     const excerpt = getPostExcerpt(post.content || '');
-    // --- Get avatar URL and fallback name ---
+    
+    // Get author details
     const authorAvatarUrl = post.profiles?.avatar_url;
-    const authorDisplayName = post.author_name || post.profiles?.full_name || 'Author'; // Use author_name first, then profile full_name
-    // ----------------------------------------
+    const authorDisplayName = post.author_name || post.profiles?.full_name || 'Author';
 
     return (
         <motion.article
@@ -43,6 +64,7 @@ export default function PostCard({ post }: { post: Post }) {
             transition={{ type: 'spring', stiffness: 300 }}
         >
             <div className="relative">
+                {/* Featured Image */}
                 <Link href={`/blog/${post.slug}`} className="block aspect-video overflow-hidden">
                     {post.image_url && (
                         <Image
@@ -54,8 +76,9 @@ export default function PostCard({ post }: { post: Post }) {
                         />
                     )}
                 </Link>
-                {/* --- Author Avatar and Name Section --- */}
-                {(post.author_name || post.profiles) && ( // Show only if there's some author info
+
+                {/* Author Badge (Top Right) */}
+                {(post.author_name || post.profiles) && (
                     <div className="absolute top-3 right-3 flex items-center gap-2 bg-background/80 text-foreground text-xs font-semibold py-1 pl-1 pr-2.5 rounded-full backdrop-blur-sm shadow">
                         <Avatar className="h-5 w-5 border">
                             <AvatarImage src={authorAvatarUrl || undefined} alt={authorDisplayName} />
@@ -63,13 +86,13 @@ export default function PostCard({ post }: { post: Post }) {
                                 {getInitials(authorDisplayName) || <UserCircle className="h-3 w-3" />}
                             </AvatarFallback>
                         </Avatar>
-                        <span className="truncate">{authorDisplayName}</span>
+                        <span className="truncate max-w-[100px]">{authorDisplayName}</span>
                     </div>
                 )}
-                 {/* ------------------------------------- */}
             </div>
 
             <div className="p-6 flex flex-col flex-grow">
+                {/* Categories & Tags */}
                 <div className="flex justify-between items-center mb-2">
                     {post.categories && (
                         <p className="text-xs font-bold text-primary uppercase tracking-wider">
@@ -87,13 +110,19 @@ export default function PostCard({ post }: { post: Post }) {
                     )}
                 </div>
 
-                <h2 className="text-xl font-bold tracking-tight text-foreground flex-grow mb-2">
-                    <Link href={`/blog/${post.slug}`} className="hover:text-primary transition-colors">{post.title}</Link>
+                {/* Title */}
+                <h2 className="text-xl font-bold tracking-tight text-foreground flex-grow mb-2 line-clamp-2">
+                    <Link href={`/blog/${post.slug}`} className="hover:text-primary transition-colors">
+                        {post.title}
+                    </Link>
                 </h2>
-                <p className="text-muted-foreground text-sm mt-auto">
+
+                {/* Clean Excerpt */}
+                <p className="text-muted-foreground text-sm mt-auto line-clamp-3">
                     {excerpt}
                 </p>
 
+                {/* Footer: Date, Likes, Read More */}
                 <div className="flex items-end justify-between text-sm text-muted-foreground mt-4 pt-4 border-t">
                     <div className="flex items-center gap-4 text-xs">
                         <div className="flex items-center gap-1.5">

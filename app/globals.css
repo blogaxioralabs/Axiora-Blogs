@@ -113,12 +113,91 @@
   }
 }
 
+/* 1. Fix Z-Index for Fullscreen & Side-by-Side (Navbar eka yata karanna) */
 .editor-toolbar.fullscreen,
-.EasyMDEContainer .CodeMirror-fullscreen {
-  z-index: 100 !important; /* Navbar එක z-50 නිසා, ඊට වඩා වැඩි අගයක් දෙන්න ඕනේ */
+.EasyMDEContainer .CodeMirror-fullscreen,
+.editor-preview-side {
+  z-index: 1000 !important;
 }
 
-/* Optional: Editor එකේ පෙනුම තව ටිකක් professional කරන්න */
+/* 2. Fix Preview Styles (Tailwind Reset eka override kireema) */
+/* Me kotasa nisa thama Preview eke Bold, List, Headers hariyata penne */
+.EasyMDEContainer .editor-preview,
+.EasyMDEContainer .editor-preview-side {
+  @apply prose dark:prose-invert max-w-none p-8 bg-background text-foreground;
+  font-family: var(--font-sans);
+}
+
+/* Specific fixes for lists inside preview */
+.EasyMDEContainer .editor-preview ul,
+.EasyMDEContainer .editor-preview-side ul {
+  @apply list-disc list-inside my-4 pl-4;
+}
+
+.EasyMDEContainer .editor-preview ol,
+.EasyMDEContainer .editor-preview-side ol {
+  @apply list-decimal list-inside my-4 pl-4;
+}
+
+.EasyMDEContainer .editor-preview h1,
+.EasyMDEContainer .editor-preview-side h1 {
+  @apply text-3xl font-bold border-b pb-2 mb-4 mt-6;
+}
+
+.EasyMDEContainer .editor-preview h2,
+.EasyMDEContainer .editor-preview-side h2 {
+  @apply text-2xl font-bold mb-3 mt-5;
+}
+
+.EasyMDEContainer .editor-preview blockquote,
+.EasyMDEContainer .editor-preview-side blockquote {
+  @apply border-l-4 border-primary pl-4 italic text-muted-foreground my-4;
+}
+
+.EasyMDEContainer .editor-preview a,
+.EasyMDEContainer .editor-preview-side a {
+  @apply text-primary underline underline-offset-4;
+}
+
+.EasyMDEContainer .editor-preview table,
+.EasyMDEContainer .editor-preview-side table {
+  @apply w-full border-collapse my-4;
+}
+
+.EasyMDEContainer .editor-preview th,
+.EasyMDEContainer .editor-preview-side th,
+.EasyMDEContainer .editor-preview td,
+.EasyMDEContainer .editor-preview-side td {
+  @apply border border-border p-2;
+}
+
+/* 3. Editor Styling (Edit karana thana lassana kireema) */
 .EasyMDEContainer .CodeMirror {
-  border-radius: 0.5rem; /* Rounded corners */
+  @apply border-input bg-background text-foreground rounded-b-md text-base leading-relaxed py-2;
+  min-height: 400px; /* Default height wadi kala */
+}
+
+.EasyMDEContainer .editor-toolbar {
+  @apply border-input bg-muted/20 rounded-t-md opacity-100;
+}
+
+.EasyMDEContainer .editor-toolbar button {
+  @apply text-foreground hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors;
+}
+
+.EasyMDEContainer .editor-toolbar button.active {
+  @apply bg-primary/20 text-primary;
+}
+
+.EasyMDEContainer .editor-toolbar i.separator {
+  @apply border-r border-border;
+}
+
+/* Dark mode specific adjustments for the editor cursor and text */
+.dark .EasyMDEContainer .CodeMirror {
+  color: #e2e8f0;
+  background-color: #020817; /* Matches shadcn background */
+}
+.dark .EasyMDEContainer .CodeMirror-cursor {
+  border-left: 1px solid #e2e8f0;
 }
