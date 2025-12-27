@@ -56,7 +56,7 @@ export default function PostCard({ post }: { post: Post }) {
     // Get author details
     const authorAvatarUrl = post.profiles?.avatar_url;
     const authorDisplayName = post.author_name || post.profiles?.full_name || 'Author';
-
+    const authorId = post.user_id; 
     return (
         <motion.article
             className="bg-card rounded-xl border shadow-sm overflow-hidden h-full flex flex-col group"
@@ -79,7 +79,11 @@ export default function PostCard({ post }: { post: Post }) {
 
                 {/* Author Badge (Top Right) */}
                 {(post.author_name || post.profiles) && (
-                    <div className="absolute top-3 right-3 flex items-center gap-2 bg-background/80 text-foreground text-xs font-semibold py-1 pl-1 pr-2.5 rounded-full backdrop-blur-sm shadow">
+                    <Link 
+                        href={authorId ? `/author/${authorId}` : '#'}
+                        onClick={(e) => e.stopPropagation()} // Click eka card eke wena than walata yana eka nawaththanawa
+                        className="absolute top-3 right-3 flex items-center gap-2 bg-background/80 text-foreground text-xs font-semibold py-1 pl-1 pr-2.5 rounded-full backdrop-blur-sm shadow hover:bg-background hover:text-primary transition-all z-10"
+                    >
                         <Avatar className="h-5 w-5 border">
                             <AvatarImage src={authorAvatarUrl || undefined} alt={authorDisplayName} />
                             <AvatarFallback className="text-[8px] font-semibold">
@@ -87,7 +91,7 @@ export default function PostCard({ post }: { post: Post }) {
                             </AvatarFallback>
                         </Avatar>
                         <span className="truncate max-w-[100px]">{authorDisplayName}</span>
-                    </div>
+                    </Link>
                 )}
             </div>
 
