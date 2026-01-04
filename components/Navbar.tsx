@@ -35,15 +35,11 @@ export default async function Navbar() {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center">
-                {/* Desktop Navigation */}
                 <div className="hidden md:flex w-full items-center justify-between">
-                    {/* Logo/Brand Text */}
                     <div className="flex-1 flex justify-start">
-                        {/* --- Image එක අයින් කරලා Text එක විතරක් දැම්මා --- */}
                         <Link href="/" className="mr-6 flex items-center space-x-2">
                             <span className="font-bold text-lg">Axiora Blogs</span>
                         </Link>
-                        {/* ------------------------------------------- */}
                     </div>
 
                     {/* Center Links */}
@@ -67,9 +63,7 @@ export default async function Navbar() {
                                 <LogoutButton />
                             </>
                         ) : (
-                            <Link href="/login" passHref>
-                                <Button variant="ghost" size="icon" className="rounded-full" aria-label="Login"><UserCircle className="h-6 w-6" /></Button>
-                            </Link>
+                            null
                         )}
                         <ThemeToggle />
                     </div>
@@ -102,9 +96,7 @@ export default async function Navbar() {
                                  </Link>
                              </>
                         ) : (
-                            <Link href="/login" passHref>
-                                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" aria-label="Login"><UserCircle className="h-6 w-6" /></Button>
-                            </Link>
+                            null
                         )}
                         <ThemeToggle />
                     </div>

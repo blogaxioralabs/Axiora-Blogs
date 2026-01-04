@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 
 // Ensure the API key is available in your environment variables
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_QUIZ_API_KEY!);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    if (!process.env.GEMINI_QUIZ_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
-        { error: "Gemini Quiz API key not configured" },
+        { error: "Gemini API key not configured" },
         { status: 500 }
       );
     }

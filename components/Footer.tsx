@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { NewsletterForm } from './NewsletterForm';
 import { Twitter, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient'; 
+import SecretTrigger from './SecretTrigger';
 
 
 type Category = {
@@ -80,7 +81,8 @@ export default async function Footer() {
                 {/* Bottom section */}
                 <div className="flex flex-col-reverse items-center justify-between gap-6 sm:flex-row">
                     <p className="text-sm text-muted-foreground text-center sm:text-left">
-                        &copy; {new Date().getFullYear()} Axiora Labs. All Rights Reserved.
+                        {/* SECRET TRIGGER ADDED HERE */}
+                        <SecretTrigger /> All Rights Reserved.
                     </p>
                     
                     <div className="flex items-center gap-5">

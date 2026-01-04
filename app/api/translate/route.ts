@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from 'next/server';
 
 export const maxDuration = 60; // Optional: Use edge runtime
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_TRANSLATION_API_KEY!);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 function getLanguageName(code: string): string {
     const languages: { [key: string]: string } = {
@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
     }
     // ==========================================================
 
-    if (!process.env.GEMINI_TRANSLATION_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
        return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
 
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash", // Using gemini-1.5-flash
+        model: "gemini-2.5-flash", 
          safetySettings: [
              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
              
