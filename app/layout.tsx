@@ -7,7 +7,7 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('axiorablogs.com'),
+  metadataBase: new URL('https://axiorablogs.com'),
   title: {
     default: 'Axiora Blogs - Exploring STEM',
     template: '%s | Axiora Blogs',

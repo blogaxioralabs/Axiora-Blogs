@@ -81,7 +81,7 @@ export async function generateMetadata(
       return trimmed.substring(0, Math.min(trimmed.length, trimmed.lastIndexOf(' '))) + '...';
     }
     const description = createExcerpt(postForMeta.content || '');
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'axiorablogs.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
     const url = `${siteUrl}/blog/${postForMeta.slug}`;
     const imageUrl = postForMeta.image_url || `${siteUrl}/axiora-og-image.png`;
     const keywords = ['Axiora Blogs'];

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const sitemapUrl = 'axiorablogs.com/sitemap.xml'; 
+  const sitemapUrl = 'https://axiorablogs.com/sitemap.xml'; 
 
   return {
     rules: {

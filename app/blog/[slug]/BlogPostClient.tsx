@@ -93,7 +93,7 @@ export default function BlogPostClient({ initialPost }: { initialPost: Post }) {
     const authorDisplayName = post.author_name || post.profiles?.full_name || 'Axiora Team'; // Default to Axiora Team if no name
     // ----------------------------------------
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'axiorablogs.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
     const url = `${siteUrl}/blog/${post.slug}`;
 
     return (

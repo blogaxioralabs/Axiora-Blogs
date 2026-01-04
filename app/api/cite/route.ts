@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const publicationDate = new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const siteUrl = 'axiorablogs.com';
+    const siteUrl = 'https://axiorablogs.com';
     const postUrl = `${siteUrl}/blog/${post.slug}`;
     const author = post.author_name || 'Axiora Labs';
     const retrievedDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });

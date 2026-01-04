@@ -2,7 +2,7 @@
 
 import { supabase } from '@/lib/supabaseClient';
 
-const URL = 'axiorablogs.com';
+const URL = 'https://axiorablogs.com';
 
 export default async function sitemap() {
     // 1. Get URLs for blog posts
