@@ -333,24 +333,49 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                      const tagUpsertPromises = tags.map(async (tagName) => {
                          const tagSlug = slugify(tagName, { lower: true, strict: true });
                          
-                         // Get or Create tag
-                         const { data: tag, error: tagError } = await supabase
+                         let { data: existingTag } = await supabase
                              .from('tags')
-                             .upsert({ name: tagName, slug: tagSlug }, { onConflict: 'slug' })
                              .select('id')
-                             .single();
+                             .eq('slug', tagSlug)
+                             .maybeSingle();
+
+                         let tagId = existingTag?.id;
+
+                         if (!tagId) {
+                             const { data: newTag, error: createError } = await supabase
+                                 .from('tags')
+                                 .insert({ name: tagName, slug: tagSlug })
+                                 .select('id')
+                                 .single();
                              
-                         if (tagError) {
-                             console.error(`Failed tag upsert: ${tagName}`, tagError);
-                             return null;
+                             if (createError) {
+                                 
+                                if (createError.code === '23505') { 
+                                     const { data: retryTag } = await supabase
+                                         .from('tags')
+                                         .select('id')
+                                         .eq('slug', tagSlug)
+                                         .maybeSingle();
+                                     tagId = retryTag?.id;
+                                 } else {
+                                     console.error(`Failed to create tag: ${tagName}`, createError);
+                                     return null;
+                                 }
+                             } else {
+                                 tagId = newTag.id;
+                             }
                          }
-                         return { post_id: post.id, tag_id: tag.id };
+                         
+                         if (tagId) {
+                            return { post_id: post.id, tag_id: tagId };
+                         }
+                         return null;
                      });
-                     
+                                        
                      const postTagLinks = (await Promise.all(tagUpsertPromises)).filter(link => link !== null);
                      
                      if (postTagLinks.length > 0) {
-                         const { error: linkError } = await supabase.from('post_tags').insert(postTagLinks);
+                         const { error: linkError } = await supabase.from('post_tags').insert(postTagLinks as any);
                          if (linkError) console.error("Error linking tags:", linkError);
                      }
                 }

@@ -10,7 +10,7 @@ export function ShareButtons({ title }: { title: string }) {
     const pathname = usePathname();
     const [isCopied, setIsCopied] = useState(false);
 
-    const siteUrl = "https://axiora-blogs.vercel.app";
+    const siteUrl = "axiorablogs.com";
     const url = `${siteUrl}${pathname}`;
     
     // Custom share text for a better user experience

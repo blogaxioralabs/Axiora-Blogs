@@ -2,7 +2,7 @@
 
 import { supabase } from '@/lib/supabaseClient';
 
-const URL = 'https://axiora-blogs.vercel.app';
+const URL = 'axiorablogs.com';
 
 export default async function sitemap() {
     // 1. Get URLs for blog posts

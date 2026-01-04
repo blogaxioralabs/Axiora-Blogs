@@ -7,7 +7,7 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://axiora-blogs.vercel.app'),
+  metadataBase: new URL('axiorablogs.com'),
   title: {
     default: 'Axiora Blogs - Exploring STEM',
     template: '%s | Axiora Blogs',
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Axiora Blogs',
     description: 'Exploring the frontiers of Science, Technology, Engineering, and Mathematics.',
-    url: 'https://axiora-blogs.vercel.app',
+    url: 'https://axiorablogs.com',
     siteName: 'Axiora Blogs',
     locale: 'en_US',
     type: 'website',
