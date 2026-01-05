@@ -1,4 +1,4 @@
-// Axiora Blogs/app/register/page.tsx
+// Axiora Blogs/app/secret-join-x99/page.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';

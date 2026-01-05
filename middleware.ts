@@ -61,7 +61,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Redirect logged-in users from auth pages to dashboard
-  if ((pathname === '/login' || pathname === '/register') && session) {
+  if ((pathname === '/login' || pathname === '/secret-join-x99') && session) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
