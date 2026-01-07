@@ -7,7 +7,7 @@ export type Post = {
     created_at: string;
     category_id: number;
     sub_category_id?: number | null; // Changed to allow null
-    categories?: { name: string } | null; // Changed to allow null
+    categories?: { name: string; slug: string } | null; // Changed to allow null
     sub_categories?: { name: string; slug: string } | null; // Changed to allow null
     content?: string | null; // Changed to allow null
     is_featured?: boolean;

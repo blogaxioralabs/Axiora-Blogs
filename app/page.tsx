@@ -38,7 +38,7 @@ async function getPageData() {
     serverSupabase
       .from('posts')
       // Removed profiles join to prevent the 400/server error
-      .select('*, user_id, like_count, view_count, categories(name), sub_categories(name, slug)') 
+      .select('*, user_id, like_count, view_count,categories(name, slug), sub_categories(name, slug)') 
       .order('created_at', { ascending: false }),
     serverSupabase.from('categories').select('id, name'),
     serverSupabase.from('sub_categories').select('id, name, parent_category_id'), 
@@ -93,15 +93,54 @@ async function getPageData() {
 
 export default async function HomePage() {
   const { posts, categories, subCategories, trendingNews } = await getPageData();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
+
+  // --- FINAL SEO TOUCH: Homepage Schema ---
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        "url": siteUrl,
+        "name": "Axiora Blogs",
+        "description": "Your daily dose of Science, Technology, Engineering, and Mathematics.",
+        "publisher": { "@id": `${siteUrl}/#organization` },
+        "inLanguage": "en-US"
+      },
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        "name": "Axiora Blogs",
+        "url": siteUrl,
+        "logo": {
+          "@type": "ImageObject",
+          "url": `${siteUrl}/axiora-logo.png`,
+          "width": 112,
+          "height": 112
+        },
+        "sameAs": [
+          "https://twitter.com/axiorablogs", // Add your social links here
+          "https://facebook.com/axiorablogs"
+        ]
+      }
+    ]
+  };
 
   return (
-    <Suspense fallback={<div className="container py-12 text-center">Loading...</div>}>
-      <HomePageClient 
-        initialPosts={posts} 
-        initialCategories={categories} 
-        initialSubCategories={subCategories} 
-        trendingNews={trendingNews}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-    </Suspense>
+      <Suspense fallback={<div className="container py-12 text-center">Loading...</div>}>
+        <HomePageClient 
+          initialPosts={posts} 
+          initialCategories={categories} 
+          initialSubCategories={subCategories} 
+          trendingNews={trendingNews}
+        />
+      </Suspense>
+    </>
   );
 }

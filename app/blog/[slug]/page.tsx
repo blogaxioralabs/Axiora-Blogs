@@ -5,6 +5,7 @@ import BlogPostClient from './BlogPostClient';
 import { RelatedPosts } from '@/components/RelatedPosts';
 import type { Post } from '@/lib/types';
 import type { Metadata, ResolvingMetadata } from 'next';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 // --- Define Profile type ---
 type ProfileInfo = {
@@ -17,12 +18,11 @@ async function getPostData(slug: string): Promise<(Omit<Post, 'profiles'> & { us
     const supabase = createClient();
     const { data: postData, error } = await supabase
         .from('posts')
-        // --- Corrected select string (removed comment) ---
         .select(`*,
                  user_id,
                  like_count,
                  view_count,
-                 categories ( name ),
+                 categories ( name, slug ),
                  sub_categories ( name, slug ),
                  tags ( id, name, slug )`)
         // ------------------------------------------------
@@ -69,11 +69,9 @@ export async function generateMetadata(
 
     const profile = await getProfileData(postBase.user_id); // Fetch profile data separately
 
-    // Combine for metadata generation
     const postForMeta: Post = { ...postBase, profiles: profile };
 
-    // --- (Metadata generation logic එකේ වෙනසක් නෑ) ---
-    function createExcerpt(content: string, length = 155): string { /* ... excerpt logic ... */
+    function createExcerpt(content: string, length = 155): string {
       if (!content) return '';
       const strippedContent = content.replace(/!\[.*?\]\(.*?\)/g, '').replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/<[^>]*>/g, '').replace(/(\r\n|\n|\r)/gm, " ").replace(/#+\s/g, '').replace(/[`*_\-~|]/g, '').replace(/\s+/g, ' ').trim();
       if (strippedContent.length <= length) return strippedContent;
@@ -120,12 +118,97 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         profiles: profile // Add the fetched profile data (can be null)
     };
 
-    // 4. Pass the combined data to the client component
+    // --- SEO ENHANCEMENT: Generate JSON-LD Schema (AEO/GEO Optimized) ---
+    // This helps Google and AI understand your content deeply
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
+    const cleanDescription = postWithProfile.content 
+        ? postWithProfile.content.replace(/<[^>]*>?/gm, '').substring(0, 160) + '...'
+        : postWithProfile.title;
+
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: postWithProfile.title,
+        image: postWithProfile.image_url ? [postWithProfile.image_url] : [`${siteUrl}/axiora-og-image.png`],
+        datePublished: postWithProfile.created_at,
+        dateModified: postWithProfile.created_at, // Use updated_at if you add it to DB later
+        author: [{
+            '@type': 'Person',
+            name: postWithProfile.author_name || postWithProfile.profiles?.full_name || 'Axiora Author',
+            url: postWithProfile.user_id ? `${siteUrl}/author/${postWithProfile.user_id}` : siteUrl
+        }],
+        publisher: {
+            '@type': 'Organization',
+            name: 'Axiora Blogs',
+            logo: {
+                '@type': 'ImageObject',
+                url: `${siteUrl}/axiora-logo.png`
+            }
+        },
+        description: cleanDescription,
+        mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': `${siteUrl}/blog/${postWithProfile.slug}`
+        },
+        articleSection: postWithProfile.categories?.name || 'General',
+        keywords: postWithProfile.tags?.map(t => t.name).join(', ') || ''
+    };
+
+    const breadcrumbJsonLd = {  
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: siteUrl
+        },
+        {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Blog',
+            item: `${siteUrl}/blog`
+        },
+        {
+            '@type': 'ListItem',
+            position: 3,
+            name: postWithProfile.categories?.name || 'Category',
+            item: `${siteUrl}/category/${postWithProfile.categories?.slug}`
+        },
+        {
+            '@type': 'ListItem',
+            position: 4,
+            name: postWithProfile.title,
+            item: `${siteUrl}/blog/${postWithProfile.slug}`
+        }
+    ]
+};
+
+    // 4. Pass the combined data to the client component and Inject JSON-LD
     return (
         <>
-            <BlogPostClient initialPost={postWithProfile} />
-            {/* RelatedPosts uses its own fetching, no change needed here */}
-            <RelatedPosts currentPostId={postWithProfile.id} />
+            {/* Add JSON-LD Script for Search Engines */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+            />
+            <div className="container py-6">
+       <Breadcrumbs 
+         items={[
+           { label: 'Blog', href: '/blog' },
+           { label: postWithProfile.categories?.name || 'Category', href: `/category/${postWithProfile.categories?.slug}` }, // Category එකට ලින්ක් එකක් තිබ්බොත් හොඳයි
+           { label: postWithProfile.title, href: `/blog/${postWithProfile.slug}` }
+         ]} 
+       />
+       
+       <BlogPostClient initialPost={postWithProfile} />
+       <RelatedPosts currentPostId={postWithProfile.id} />
+    </div>
         </>
     );
 }
