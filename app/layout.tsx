@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   // --- Enhanced SEO Verification ---
   verification: {
     google: '17e1lIZoJSLOk1XEoFk1aalUCrms0shXRx2uwzanBCk', // You can add this later in Google Search Console
-    yandex: 'YOUR_YANDEX_VERIFICATION_CODE',
+    yandex: 'b6c1807dc4805753',
     other: {
       'msvalidate.01': 'YOUR_BING_VERIFICATION_CODE',
     },
