@@ -193,11 +193,64 @@
   @apply border-r border-border;
 }
 
-/* Dark mode specific adjustments for the editor cursor and text */
 .dark .EasyMDEContainer .CodeMirror {
   color: #e2e8f0;
-  background-color: #020817; /* Matches shadcn background */
+  background-color: #020817;
 }
 .dark .EasyMDEContainer .CodeMirror-cursor {
   border-left: 1px solid #e2e8f0;
+}
+
+.editor-toolbar i:not(.separator) {
+  color: #000000 !important; 
+}
+
+.editor-toolbar .separator {
+  display: none !important; 
+}
+
+.editor-toolbar a:hover,
+.editor-toolbar a.active {
+  background-color: #f3f4f6 !important; 
+  border-color: #000000 !important;
+}
+
+.editor-statusbar {
+  color: #000000 !important;
+}
+
+.editor-statusbar span {
+  color: #000000 !important;
+}
+
+.CodeMirror {
+  color: #000000 !important;
+  border-color: #e5e7eb !important;
+}
+
+.CodeMirror-line {
+  color: #000000 !important;
+}
+
+.cm-variable-2, .cm-variable-3, .cm-keyword {
+  color: #000000 !important;
+}
+
+.CodeMirror .cm-variable-2, 
+.CodeMirror .cm-variable-3, 
+.CodeMirror .cm-keyword {
+  color: #000000 !important; 
+}
+
+
+.prose ul > li::marker,
+.prose ol > li::marker {
+  color: #000000 !important; 
+  font-weight: bold;
+}
+
+/* 3. Prose Styles Override (Global) */
+.prose {
+  --tw-prose-bullets: #000000 !important;
+  --tw-prose-counters: #000000 !important;
 }

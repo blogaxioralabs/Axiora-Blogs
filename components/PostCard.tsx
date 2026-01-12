@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import Image from 'next/image';
 import { ArrowRight, UserCircle, CalendarDays, Heart } from 'lucide-react';
 import type { Post } from '@/lib/types';
+import { getOptimizedImageUrl } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Helper function to get initials from name
@@ -68,7 +69,7 @@ export default function PostCard({ post }: { post: Post }) {
                 <Link href={`/blog/${post.slug}`} className="block aspect-video overflow-hidden">
                     {post.image_url && (
                         <Image
-                            src={post.image_url}
+                            src={getOptimizedImageUrl(post.image_url)}
                             alt={`${post.title} - Featured image`}
                             fill
                             className="object-cover transition-transform duration-300 group-hover:scale-105"

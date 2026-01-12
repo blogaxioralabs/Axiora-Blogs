@@ -145,7 +145,7 @@ export default function BlogPostClient({ initialPost }: { initialPost: Post }) {
                     )}
 
                     {/* Main Content Area */}
-                    <div className="prose dark:prose-invert max-w-none relative min-h-[300px]">
+                    <div className="prose dark:prose-invert max-w-none prose-li:marker:text-black prose-ul:marker:text-black prose-ol:marker:text-black relative min-h-[300px]">
                         {isTranslating && (
                             <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center z-10 rounded-md">
                                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" /><span className="ml-2 text-muted-foreground">Translating...</span>

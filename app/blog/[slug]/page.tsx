@@ -6,6 +6,7 @@ import { RelatedPosts } from '@/components/RelatedPosts';
 import type { Post } from '@/lib/types';
 import type { Metadata, ResolvingMetadata } from 'next';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { getOptimizedImageUrl } from "@/lib/utils";
 
 // --- Define Profile type ---
 type ProfileInfo = {
@@ -93,11 +94,11 @@ export async function generateMetadata(
       description: description,
       openGraph: {
           title: `${postForMeta.title} | Axiora Blogs`, description: description, url: url, siteName: 'Axiora Blogs',
-          images: [ { url: imageUrl, width: 1200, height: 630, alt: postForMeta.title, } ], locale: 'en_US', type: 'article',
+          images: [ { url: getOptimizedImageUrl(imageUrl), width: 1200, height: 630, alt: postForMeta.title, } ], locale: 'en_US', type: 'article',
           publishedTime: postForMeta.created_at, authors: [authorNameForMeta], tags: postForMeta.tags?.map(tag => tag.name),
           ...(postForMeta.categories?.name && { section: postForMeta.categories.name }),
       },
-      twitter: { card: 'summary_large_image', title: `${postForMeta.title} | Axiora Blogs`, description: description, images: [imageUrl], },
+      twitter: { card: 'summary_large_image', title: `${postForMeta.title} | Axiora Blogs`, description: description, images: [getOptimizedImageUrl(imageUrl)], },
       alternates: { canonical: url, }, keywords: keywords,
     }
 }
@@ -118,8 +119,6 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         profiles: profile // Add the fetched profile data (can be null)
     };
 
-    // --- SEO ENHANCEMENT: Generate JSON-LD Schema (AEO/GEO Optimized) ---
-    // This helps Google and AI understand your content deeply
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
     const cleanDescription = postWithProfile.content 
         ? postWithProfile.content.replace(/<[^>]*>?/gm, '').substring(0, 160) + '...'
@@ -129,7 +128,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         '@context': 'https://schema.org',
         '@type': 'BlogPosting',
         headline: postWithProfile.title,
-        image: postWithProfile.image_url ? [postWithProfile.image_url] : [`${siteUrl}/axiora-og-image.png`],
+        image: postWithProfile.image_url ? [getOptimizedImageUrl(postWithProfile.image_url)] : [`${siteUrl}/axiora-og-image.png`],
         datePublished: postWithProfile.created_at,
         dateModified: postWithProfile.created_at, // Use updated_at if you add it to DB later
         author: [{

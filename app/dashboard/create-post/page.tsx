@@ -1,4 +1,3 @@
-// app/dashboard/create-post/page.tsx
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -26,6 +25,10 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 
 // Dynamically import SimpleMDE to avoid SSR issues
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false });
+
+// --- CLOUDINARY CONFIGURATION ---
+const CLOUD_NAME = "dnlkjlzzx"; 
+const UPLOAD_PRESET = "my_blog_uploads";
 
 // Types
 type Category = { id: number; name: string; };
@@ -100,19 +103,35 @@ export default function CreatePostPage() {
         getUser();
     }, [supabase, router, authorName]);
 
-    const imageUploadFunction = (file: File, onSuccess: (url: string) => void, onError: (error: string) => void) => {
-        const handleUpload = async () => {
-            if (!file) return;
-            const fileName = `${currentUser?.id || 'public'}/${Date.now()}-${slugify(file.name, { lower: true })}`;
-            const { error: uploadError } = await supabase.storage.from('post_images').upload(fileName, file);
-            if (uploadError) { onError(`Upload Failed: ${uploadError.message}`); return; }
-            const { data: { publicUrl } } = supabase.storage.from('post_images').getPublicUrl(fileName);
-            onSuccess(publicUrl);
-        };
-        handleUpload();
+    // --- CLOUDINARY UPLOAD FUNCTION ---
+    const uploadImageToCloudinary = async (file: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", UPLOAD_PRESET);
+
+        const response = await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+            {
+                method: "POST",
+                body: formData,
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Image upload failed. Please check Cloudinary settings.");
+        }
+
+        const data = await response.json();
+        return data.secure_url;
     };
 
-    // --- ENHANCED EDITOR OPTIONS (WORD-LIKE FEATURES) ---
+    const imageUploadFunction = (file: File, onSuccess: (url: string) => void, onError: (error: string) => void) => {
+        uploadImageToCloudinary(file)
+            .then((url) => onSuccess(url))
+            .catch((err) => onError(`Upload Failed: ${err.message}`));
+    };
+
+    // --- ENHANCED EDITOR OPTIONS ---
     const mdeOptions = useMemo((): Options => ({
         autofocus: true,
         spellChecker: false,
@@ -121,8 +140,7 @@ export default function CreatePostPage() {
         imageAccept: "image/png, image/jpeg, image/gif, image/webp",
         imageMaxSize: 10 * 1024 * 1024,
         placeholder: "Start writing your amazing article here...",
-        minHeight: "400px", // Bigger default height
-        // Full Toolbar Configuration
+        minHeight: "400px", 
         toolbar: [
             "bold", "italic", "strikethrough", "heading", "|", 
             "quote", "code", "unordered-list", "ordered-list", "clean-block", "|", 
@@ -130,7 +148,7 @@ export default function CreatePostPage() {
             "preview", "side-by-side", "fullscreen", "|", 
             "guide"
         ],
-        status: ["autosave", "lines", "words", "cursor"], // Show stats at bottom
+        status: ["autosave", "lines", "words", "cursor"], 
         imageTexts: { sbInit: "Drop an image here to upload it..." },
     }), [supabase, currentUser?.id]);
 
@@ -244,12 +262,14 @@ export default function CreatePostPage() {
             try {
                 const slug = await createUniqueSlug(title, supabase);
                 let finalImageUrl = imageUrl;
+                
+                // --- MODIFIED TO USE CLOUDINARY ---
                 if (imageFile) {
-                    const fileName = `${currentUser.id}/${Date.now()}-${slugify(imageFile.name, { lower: true })}`;
-                    const { error: uploadError } = await supabase.storage.from('post_images').upload(fileName, imageFile);
-                    if (uploadError) throw new Error(`Image Upload Failed: ${uploadError.message}`);
-                    const { data: urlData } = supabase.storage.from('post_images').getPublicUrl(fileName);
-                    finalImageUrl = urlData.publicUrl;
+                    try {
+                        finalImageUrl = await uploadImageToCloudinary(imageFile);
+                    } catch (uploadError: any) {
+                         throw new Error(`Image Upload Failed: ${uploadError.message}`);
+                    }
                 }
 
                 const { data: postData, error: postError } = await supabase.from('posts').insert({
@@ -299,7 +319,7 @@ export default function CreatePostPage() {
         <div className="container max-w-6xl py-12">
             <Toaster richColors position="top-right" />
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                 <Link href="/dashboard" className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
+                 <Link href="/dashboard" className="flex items-center text-sm font-medium text-black mb-4">
                      <ArrowLeft className="mr-2 h-4 w-4" />
                      Back to Dashboard
                  </Link>
