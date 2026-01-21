@@ -21,6 +21,10 @@ const nextConfig = {
                         value: 'nosniff',
                     },
                     {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https://www.padumainduwara.me https://padumainduwara.me http://localhost:3000;",
+          },
+                    {
                         key: 'X-Frame-Options',
                         value: 'DENY',
                     },
