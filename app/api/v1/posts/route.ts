@@ -2,9 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-// CORS Headers - වෙනත් website එකක ඉඳන් මේකට access කරන්න දෙන අවසරය
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', // ආරක්ෂිතව නම් මෙතන ඔයාගේ Main Site එකේ URL එක විතරක් දාන්න පුළුවන්
+  'Access-Control-Allow-Origin': '*', 
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
 };
@@ -64,22 +63,22 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    // 6. Data ටික ලස්සනට Clean කරලා යවන එක (Content එක දිග වැඩි නිසා කෙටි කරනවා)
     const formattedPosts = posts.map((post) => ({
       id: post.id,
       title: post.title,
-      slug: post.slug, // මේක වැදගත් main site එකේ ඉඳන් link කරන්න
+      slug: post.slug,
       image: post.image_url,
       date: post.created_at,
       author: post.author_name,
-      category: Array.isArray(post.categories) ? post.categories[0]?.name : post.categories?.name,
-      // Description එක auto generate කරනවා content එකෙන් මුල් වචන ටික අරන්
+      category: Array.isArray(post.categories) 
+        ? post.categories[0]?.name 
+        : (post.categories as any)?.name,
+      
       excerpt: post.description 
         ? post.description.substring(0, 150).replace(/[#*`]/g, '') + '...'
         : 'Read more about this topic on Axiora Blogs...',
-      link: `https://axiorablogs.com/blog/${post.slug}` // කෙලින්ම ලින්ක් එක
+      link: `https://axiorablogs.com/blog/${post.slug}`
     }));
-
     return NextResponse.json(
       { 
         success: true, 
