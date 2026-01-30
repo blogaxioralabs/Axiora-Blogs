@@ -1,45 +1,56 @@
-import { supabase } from '@/lib/supabaseClient';
+import { MetadataRoute } from 'next'
+import { createClient } from '@/lib/supabase/client'
 
-const URL = 'https://axiorablogs.com';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
 
-export const revalidate = 3600;
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const supabase = createClient();
+  
+  // 1. Fetch all posts
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('slug, created_at')
+    .order('created_at', { ascending: false });
 
-export default async function sitemap() {
-    // 1. Blog posts (High Priority)
-    const { data: posts } = await supabase.from('posts').select('slug, created_at');
-    const postUrls = posts?.map(({ slug, created_at }) => ({
-        url: `${URL}/blog/${slug}`,
-        lastModified: new Date(created_at).toISOString(),
-        changeFrequency: 'weekly',
-        priority: 0.8,
-    })) ?? [];
+  // 2. Fetch Categories (For Programmatic SEO)
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('slug');
 
-    // 2. Categories
-    const { data: categories } = await supabase.from('categories').select('slug');
-    const categoryUrls = categories?.map(({ slug }) => ({
-        url: `${URL}/category/${slug}`,
-        lastModified: new Date().toISOString(),
-        changeFrequency: 'weekly',
-        priority: 0.6,
-    })) ?? [];
+  const postEntries: MetadataRoute.Sitemap = (posts || []).map((post) => ({
+    url: `${BASE_URL}/blog/${post.slug}`,
+    lastModified: new Date(post.created_at),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
 
-    // 3. Tags
-    const { data: tags } = await supabase.from('tags').select('slug');
-    const tagUrls = tags?.map(({ slug }) => ({
-        url: `${URL}/tag/${slug}`,
-        lastModified: new Date().toISOString(),
-        changeFrequency: 'weekly',
-        priority: 0.5,
-    })) ?? [];
+  const categoryEntries: MetadataRoute.Sitemap = (categories || []).map((cat) => ({
+    url: `${BASE_URL}/category/${cat.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily',
+    priority: 0.6,
+  }));
 
-    // 4. Main Pages (Highest Priority)
-    const staticUrls = [
-        { url: URL, lastModified: new Date().toISOString(), changeFrequency: 'daily', priority: 1.0 },
-        { url: `${URL}/blog`, lastModified: new Date().toISOString(), changeFrequency: 'daily', priority: 0.9 },
-        { url: `${URL}/news`, lastModified: new Date().toISOString(), changeFrequency: 'hourly', priority: 0.7 },
-        { url: `${URL}/about`, lastModified: new Date().toISOString(), changeFrequency: 'monthly', priority: 0.5 },
-    ];
-
-    // @ts-ignore
-    return [...staticUrls, ...postUrls, ...categoryUrls, ...tagUrls];
+  return [
+    {
+      url: BASE_URL,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1,
+    },
+    {
+      url: `${BASE_URL}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${BASE_URL}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    ...postEntries,
+    ...categoryEntries,
+  ]
 }
