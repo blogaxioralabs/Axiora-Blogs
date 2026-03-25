@@ -17,9 +17,10 @@ import { AIQueryButtons } from '@/components/AskAIButtons';
 import QuizGenerator from "@/components/QuizGenerator";
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { Button } from '@/components/ui/button';
-import { Eye, UserCircle, LoaderCircle } from 'lucide-react'; // <-- UserCircle තියන්න fallback එකට
+import { Eye, UserCircle, LoaderCircle, Clock } from 'lucide-react'; // <-- UserCircle තියන්න fallback එකට
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // <-- Avatar components import කරන්න
 import { toast, Toaster } from 'sonner';
+import readingTime from 'reading-time';
 import type { Post } from '@/lib/types';
 
 const supabase = createClient();
@@ -92,7 +93,7 @@ export default function BlogPostClient({ initialPost }: { initialPost: Post }) {
     const authorAvatarUrl = post.profiles?.avatar_url;
     const authorDisplayName = post.author_name || post.profiles?.full_name || 'Axiora Team'; // Default to Axiora Team if no name
     // ----------------------------------------
-
+    const readingStats = readingTime(displayContent || '');
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
     const url = `${siteUrl}/blog/${post.slug}`;
 
@@ -121,6 +122,10 @@ export default function BlogPostClient({ initialPost }: { initialPost: Post }) {
                                 <span>{authorDisplayName}</span>
                             </div>
                             {/* Date */}
+                            <div className="flex items-center gap-1.5">
+                                <Clock className="h-4 w-4" />
+                                <span>{Math.ceil(readingStats.minutes)} min read</span>
+                            </div>
                             <span>Posted on {new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', })}</span>
                             {/* Views */}
                             <div className="flex items-center gap-1.5">
