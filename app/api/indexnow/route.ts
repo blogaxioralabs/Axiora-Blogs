@@ -71,7 +71,7 @@ export async function POST(req: Request) {
         console.log(`[SUCCESS] Master SEO: Instantly indexed nodes ->`, urlList);
         return NextResponse.json({ 
             success: true, 
-            message: 'World-Class Real-Time Indexing Successful! Multiple nodes pinged.',
+            message: 'Real-Time Indexing Successful! Multiple nodes pinged.',
             urls: urlList 
         });
 

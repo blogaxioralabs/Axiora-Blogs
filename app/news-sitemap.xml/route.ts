@@ -1,6 +1,6 @@
 // app/news-sitemap.xml/route.ts
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 import { getOptimizedImageUrl } from "@/lib/utils"; 
 
 export const revalidate = 60; 
@@ -33,7 +33,8 @@ export async function GET() {
 
     if (error) {
         console.error('Master SEO Error - Failed to fetch news for sitemap:', error);
-        return new NextResponse('Error generating news sitemap', { status: 500 });
+
+        return new NextResponse(`Error generating news sitemap: ${error.message}`, { status: 500 }); 
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
