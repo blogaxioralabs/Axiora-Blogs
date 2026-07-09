@@ -1,5 +1,6 @@
 // app/category/[slug]/page.tsx
-import { supabase } from '../../../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/server';
+export const revalidate = 300;
 import { notFound } from 'next/navigation';
 import CategoryPageClient from './CategoryPageClient'; 
 import type { Metadata } from 'next';
@@ -9,16 +10,14 @@ type CategoryPageProps = {
   params: { slug: string };
 };
 
-// --- Define Profile type ---
 type ProfileInfo = {
     avatar_url: string | null;
     full_name: string | null;
 } | null;
-// -------------------------
 
-// --- New function to fetch profile data ---
 async function getProfileData(userId: string | null | undefined): Promise<ProfileInfo> {
     if (!userId) return null;
+    const supabase = createClient();
     const { data: profileData, error } = await supabase
         .from('profiles')
         .select('avatar_url, full_name')
@@ -29,11 +28,10 @@ async function getProfileData(userId: string | null | undefined): Promise<Profil
     }
     return profileData || null;
 }
-// ----------------------------------------
 
-// Server එකේදි data fetch කරන function එක (Modified for Two-Step Fetch)
 async function getCategoryData(slug: string) {
-    // 1. Category එක ගන්නවා
+    const supabase = createClient();
+    
     const { data: category, error: catError } = await supabase
         .from('categories')
         .select('id, name, slug') 
@@ -45,19 +43,18 @@ async function getCategoryData(slug: string) {
         return { category: null, posts: [], allSubCategories: [] };
     }
 
-    // 2. Posts ගන්නවා (profile join එක නැතුව)
+    // Fetch posts with limit + status filter
     const { data: postsData, error: postError } = await supabase
         .from('posts')
-        // REMOVED: profiles join. Added user_id.
         .select('*, user_id, like_count, categories(name), sub_categories(id, name, slug)') 
         .eq('category_id', category.id)
-        .order('created_at', { ascending: false });
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(50); // ✅ Performance: limit to 50 posts
 
-    // 3. **සියලුම** Sub-categories ගන්නවා
     const { data: allSubCategories, error: subCatError } = await supabase
         .from('sub_categories')
         .select('id, name, parent_category_id');
-
 
     if (postError) console.error("Posts fetch error:", postError);
     if (subCatError) console.error("SubCategories fetch error:", subCatError);
@@ -65,8 +62,7 @@ async function getCategoryData(slug: string) {
     let initialPosts: Post[] = (postsData || []) as Post[];
     let finalPosts: Post[] = initialPosts;
 
-    // 4. Profiles වෙනම Fetch කරලා Merge කිරීම
-     if (initialPosts.length > 0) {
+    if (initialPosts.length > 0) {
         const userIds = [...new Set(initialPosts.map(p => p.user_id).filter(id => id != null))] as string[];
 
         if (userIds.length > 0) {
@@ -78,13 +74,11 @@ async function getCategoryData(slug: string) {
             if (profilesError) {
                 console.error('Error fetching profiles for category page:', profilesError);
             } else if (profiles) {
-                // Cast the initial empty object to the correct Record type (fixing the TS build error)
                 const profilesMap: Record<string, ProfileInfo> = profiles.reduce((acc, profile) => {
                     acc[profile.id] = { avatar_url: profile.avatar_url, full_name: profile.full_name };
                     return acc;
                 }, {} as Record<string, ProfileInfo>);
 
-                // Merge profiles back into posts
                 finalPosts = initialPosts.map(post => ({
                     ...post,
                     profiles: post.user_id ? profilesMap[post.user_id] : null,
@@ -93,8 +87,6 @@ async function getCategoryData(slug: string) {
         }
     }
 
-
-    // Data return කරනවා
     return {
         category,
         posts: finalPosts,
@@ -102,7 +94,6 @@ async function getCategoryData(slug: string) {
     };
 }
 
-// ප්‍රධාන Page Component එක
 export default async function CategoryPage({ params }: CategoryPageProps) {
     const { category, posts, allSubCategories } = await getCategoryData(params.slug);
 
@@ -119,7 +110,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     );
 }
 
-// Metadata generate කරන function එක (Remains the same)
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
     const { category } = await getCategoryData(params.slug); 
 

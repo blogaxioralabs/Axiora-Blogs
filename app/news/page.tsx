@@ -1,97 +1,99 @@
-import { NewsCard } from '@/components/NewsCard';
-import { Pagination } from '@/components/Pagination';
-import { NewsFilterControls } from '@/components/NewsFilterControls';
-import { Rss } from 'lucide-react';
+// app/news/page.tsx
+import { Suspense } from 'react';
+import NewsPageClient from './NewsPageClient';
+import { NewsHero } from '@/components/NewsHero';
+import { createClient } from '@/lib/supabase/server';
 import type { Metadata } from 'next';
-import type { NewsArticle } from '@/lib/types'; // Using the centralized type
 
-const POSTS_PER_PAGE = 24;
+export const revalidate = 300; // ISR: re-generate every 5 minutes
 
-async function getStemNews(page: number, sortBy: string) {
-    const apiKey = process.env.NEWS_API_KEY;
-    if (!apiKey) {
-        console.error("News API key is not configured.");
-        return { articles: [], totalPages: 0 };
-    }
-    
-    const query = '(science OR technology OR engineering OR mathematics OR AI OR space OR programming) NOT (celebrity OR politics OR sports)';
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=${sortBy}&language=en&page=${page}&pageSize=${POSTS_PER_PAGE}&apiKey=${apiKey}`;
-
-    try {
-        const response = await fetch(url, { next: { revalidate: 3600 } }); 
-
-        if (!response.ok) {
-            const errorBody = await response.json();
-            console.error(`News API error: ${response.statusText}`, errorBody);
-            return { articles: [], totalPages: 0 };
-        }
-
-        const data = await response.json();
-        
-        const totalResults = Math.min(data.totalResults, 100); 
-        const totalPages = Math.ceil(totalResults / POSTS_PER_PAGE);
-
-        const articles = data.articles.filter((article: NewsArticle) => article.urlToImage && article.title && article.description);
-
-        return { articles, totalPages };
-
-    } catch (error) {
-        console.error("Failed to fetch news:", error);
-        return { articles: [], totalPages: 0 };
-    }
+function NewsLoadingFallback() {
+  return <div className="container py-12 text-center text-muted-foreground">Loading news...</div>;
 }
 
 export const metadata: Metadata = {
-  title: 'Latest STEM News',
-  description: 'Stay updated with the latest news and breakthroughs from the world of STEM, curated by Axiora Blogs.',
+  title: 'News | Axiora Blogs',
+  description: 'Stay updated with breaking stories and deep dives from around the world of Science, Technology, Engineering, and Mathematics.',
 };
 
-export default async function NewsPage({ searchParams }: {
-    searchParams?: {
-        page?: string;
-        sortBy?: string;
-    };
-}) {
-    const currentPage = Number(searchParams?.page) || 1;
-    const sortBy = searchParams?.sortBy || 'publishedAt';
-    const { articles, totalPages } = await getStemNews(currentPage, sortBy);
+export default async function NewsIndexPage() {
+  const supabase = await createClient();
 
-    return (
-        <div className="container py-12">
-            <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center bg-primary/10 text-primary p-3 rounded-full mb-4">
-                    <Rss className="h-8 w-8" />
-                </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-                    Latest in STEM
-                </h1>
-                <p className="max-w-2xl mx-auto mt-4 text-muted-foreground">
-                    Discover the latest breakthroughs and stories from the worlds of science, technology, engineering, and math.
-                </p>
-            </div>
+  // 1. Hero news fetch (1 news only)
+  const { data: latestNews } = await supabase
+    .from('news_posts')
+    .select('*, news_categories(name, slug)')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(1);
 
-            <div className="flex justify-end mb-8">
-                <NewsFilterControls />
-            </div>
+  let heroNews = latestNews?.[0] || null;
 
-            {articles.length > 0 ? (
-                <>
-                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                        {/* --- THIS IS THE FIX --- */}
-                        {articles.map((article: NewsArticle, index: number) => (
-                            <NewsCard key={`${article.url}-${index}`} article={article} />
-                        ))}
-                    </div>
-                    <Pagination totalPages={totalPages} />
-                </>
-            ) : (
-                <div className="text-center py-20 px-6 bg-secondary/30 rounded-lg">
-                    <h3 className="font-semibold text-lg">Could Not Load News</h3>
-                    <p className="text-muted-foreground mt-1">
-                        There was an issue fetching the latest news. This might be due to API rate limits. Please try again later.
-                    </p>
-                </div>
-            )}
+  if (heroNews && heroNews.author_id) {
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('avatar_url, full_name')
+      .eq('id', heroNews.author_id)
+      .single();
+    if (profileData) {
+      heroNews = { ...heroNews, profiles: profileData };
+    }
+  }
+
+  // 2. Pre-fetch first page of news for SEO + faster initial load
+  const heroId = heroNews?.id;
+  let countQuery = supabase.from('news_posts').select('*', { count: 'exact', head: true }).eq('status', 'published');
+  if (heroId) countQuery = countQuery.neq('id', heroId);
+  const { count } = await countQuery;
+  const totalPages = Math.ceil((count || 0) / 9);
+
+  let dataQuery = supabase
+    .from('news_posts')
+    .select('*, news_categories(name, slug)')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .range(0, 8);
+  if (heroId) dataQuery = dataQuery.neq('id', heroId);
+  const { data: initialNews } = await dataQuery;
+
+  // 3. Fetch profiles for initial news
+  let profilesData: Record<string, any> = {};
+  if (initialNews && initialNews.length > 0) {
+    const userIds = [...new Set(initialNews.map(n => n.author_id).filter(Boolean))] as string[];
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, avatar_url, full_name')
+        .in('id', userIds);
+      if (profiles) {
+        profilesData = profiles.reduce((acc, p) => {
+          acc[p.id] = { avatar_url: p.avatar_url, full_name: p.full_name };
+          return acc;
+        }, {} as Record<string, any>);
+      }
+    }
+  }
+
+  // 4. Fetch news categories
+  const { data: categories } = await supabase.from('news_categories').select('id, name').order('name');
+
+  return (
+    <div className="min-h-screen bg-background pb-12 md:pb-20">
+      {heroNews && (
+        <div className="container mx-auto pt-10">
+          <NewsHero news={heroNews} />
         </div>
-    );
+      )}
+
+      <Suspense fallback={<NewsLoadingFallback />}>
+        <NewsPageClient 
+          excludeNewsId={heroNews?.id}
+          initialNews={initialNews || []}
+          initialTotalPages={totalPages}
+          initialProfilesData={profilesData}
+          initialCategories={categories || []}
+        />
+      </Suspense>
+    </div>
+  );
 }

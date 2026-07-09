@@ -1,5 +1,6 @@
 // app/tag/[slug]/page.tsx
-import { supabase } from '../../../lib/supabaseClient'; // Make sure this path is correct
+import { createClient } from '@/lib/supabase/server';
+export const revalidate = 300;
 import { AnimatedPostCard } from '@/components/AnimatedPostCard';
 import { notFound } from 'next/navigation';
 import { BackButton } from '@/components/BackButton';
@@ -18,6 +19,7 @@ type ProfileInfo = {
 
 // --- Updated getTagData function using two-step fetch ---
 async function getTagData(slug: string) {
+    const supabase = createClient();
     // 1. Fetch Tag Info
     const { data: tag, error: tagError } = await supabase
         .from('tags')

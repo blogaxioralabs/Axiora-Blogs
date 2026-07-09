@@ -10,6 +10,7 @@ import { SendHorizonal, Bot, User, LoaderCircle, X, Sparkles } from 'lucide-reac
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
+import rehypeRaw from 'rehype-raw';
 
 // --- Functional logic remains unchanged ---
 interface Message {
@@ -158,9 +159,9 @@ export function GeminiChatModal({ isOpen, onClose, blogTitle, blogContext }: Gem
                             ? 'bg-gradient-to-br from-primary to-blue-600 text-primary-foreground rounded-br-none shadow-md'
                             : 'bg-card/60 border border-white/10 rounded-bl-none shadow-sm'
                     )}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {msg.text || '...'}
-                        </ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+    {msg.text || '...'}
+</ReactMarkdown>
                     </div>
                     {msg.role === 'user' && (
                         <div className="bg-card/50 border border-white/10 p-2 rounded-full flex-shrink-0">

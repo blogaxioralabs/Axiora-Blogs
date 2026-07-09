@@ -1,5 +1,5 @@
 // components/RelatedPosts.tsx
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/server';
 import { AnimatedPostCard } from './AnimatedPostCard';
 import type { Post } from '@/lib/types';
 
@@ -8,6 +8,7 @@ interface RelatedPostsProps {
 }
 
 export async function RelatedPosts({ currentPostId }: RelatedPostsProps) {
+    const supabase = createClient();
     // Corrected the generic signature for the rpc call
     const { data: posts, error } = await supabase.rpc('get_random_posts', {
         limit_count: 3, 

@@ -45,3 +45,25 @@ export type NewsArticle = {
     publishedAt: string;
     content: string;
 };
+
+export interface NewsCategory {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface NewsPost {
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  image_url: string | null;
+  category_id: number | null;
+  tags: string[];
+  status: 'draft' | 'published';
+  views: number;
+  created_at: string;
+  published_at: string;
+  news_categories?: NewsCategory;
+  author_name?: string | null; 
+}

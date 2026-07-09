@@ -20,20 +20,24 @@ interface Comment {
 
 interface CommentSectionProps {
     postId: number;
+    postType?: 'blog' | 'news'; // අලුතින් එකතු කළ prop එක (Default: 'blog')
 }
 
-export function CommentSection({ postId }: CommentSectionProps) {
+export function CommentSection({ postId, postType = 'blog' }: CommentSectionProps) {
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(true);
     const [author, setAuthor] = useState('');
     const [content, setContent] = useState('');
     const [isPending, startTransition] = useTransition();
 
+    // Table එක තෝරනවා
+    const tableName = postType === 'news' ? 'news_comments' : 'comments';
+
     useEffect(() => {
         async function fetchComments() {
             setLoading(true);
             const { data, error } = await supabase
-                .from('comments')
+                .from(tableName)
                 .select('*')
                 .eq('post_id', postId)
                 .order('created_at', { ascending: false });
@@ -46,7 +50,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
             setLoading(false);
         }
         fetchComments();
-    }, [postId]);
+    }, [postId, tableName]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,7 +58,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
 
         startTransition(async () => {
             const { data, error } = await supabase
-                .from('comments')
+                .from(tableName)
                 .insert({
                     post_id: postId,
                     author_name: author.trim() || null,

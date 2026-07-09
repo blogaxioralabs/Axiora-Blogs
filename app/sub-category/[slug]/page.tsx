@@ -1,5 +1,6 @@
 // app/sub-category/[slug]/page.tsx
-import { supabase } from '../../../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/server';
+export const revalidate = 300;
 import PostCard from '@/components/PostCard';
 import { notFound } from 'next/navigation';
 import { BackButton } from '@/components/BackButton';
@@ -18,7 +19,7 @@ type ProfileInfo = {
 
 async function getProfileData(userId: string | null | undefined): Promise<ProfileInfo> {
     if (!userId) return null;
-    // Client-side supabase instance is OK here as this is a Server Component running in a non-request context
+    const supabase = createClient();
     const { data: profileData, error } = await supabase
         .from('profiles')
         .select('avatar_url, full_name')
@@ -31,6 +32,8 @@ async function getProfileData(userId: string | null | undefined): Promise<Profil
 }
 
 async function getSubCategoryData(slug: string) {
+    const supabase = createClient();
+    
     const { data: subCategory, error: subCatError } = await supabase
         .from('sub_categories')
         .select('id, name')
@@ -39,13 +42,15 @@ async function getSubCategoryData(slug: string) {
 
     if (subCatError || !subCategory) return { subCategory: null, posts: [] };
 
-    // 1. Fetch Posts WITHOUT the profiles join (Fixing the load error)
+    // 1. Fetch Posts WITHOUT the profiles join - WITH LIMIT for performance
     const { data: postsData, error: postError } = await supabase
         .from('posts')
         // REMOVED: profiles(avatar_url, full_name) join
         .select('*, user_id, categories(name), sub_categories(name, slug)')
         .eq('sub_category_id', subCategory.id)
-        .order('created_at', { ascending: false });
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(50); // ✅ Performance fix: limit to 50 posts max
 
     if (postError) {
         console.error("SubCategory posts fetch error:", postError);

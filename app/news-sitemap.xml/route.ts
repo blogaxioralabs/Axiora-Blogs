@@ -1,9 +1,9 @@
 // app/news-sitemap.xml/route.ts
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import { getOptimizedImageUrl } from "@/lib/utils"; 
 
-export const revalidate = 60; 
+export const revalidate = 60;
 
 function escapeXml(unsafe: string): string {
     if (!unsafe) return '';
@@ -20,14 +20,14 @@ function escapeXml(unsafe: string): string {
 }
 
 export async function GET() {
-    const supabase = createClient();
+    const supabase = await createClient();
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
 
     const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
     const { data: posts, error } = await supabase
         .from('posts')
-        .select('slug, title, created_at, updated_at, image_url') // Added image_url & updated_at
+        .select('slug, title, created_at, image_url')
         .gte('created_at', twoDaysAgo) 
         .order('created_at', { ascending: false });
 
@@ -44,7 +44,7 @@ export async function GET() {
     ${(posts || []).map(post => {
         // Prepare precise dates and images
         const pubDate = new Date(post.created_at).toISOString();
-        const modDate = post.updated_at ? new Date(post.updated_at).toISOString() : pubDate;
+        const modDate = pubDate;
         const imageUrl = post.image_url ? getOptimizedImageUrl(post.image_url) : `${siteUrl}/axiora-og-image.png`;
 
         return `

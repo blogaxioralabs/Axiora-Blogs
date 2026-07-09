@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 import Image from 'next/image';
-import { ArrowRight, UserCircle, CalendarDays, Heart } from 'lucide-react';
+import { ArrowUpRight, UserCircle, CalendarDays, Heart, Eye } from 'lucide-react';
 import type { Post } from '@/lib/types';
 import { getOptimizedImageUrl } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,20 +21,22 @@ function getPostExcerpt(content: string, length = 100): string {
     if (!content) return '';
     
     const strippedContent = content
-        // 1. Remove Markdown formatting symbols
-        .replace(/(\*\*|__)(.*?)\1/g, '$2') // Bold (**text**) -> text
-        .replace(/(\*|_)(.*?)\1/g, '$2')    // Italic (*text*) -> text
-        .replace(/~~(.*?)~~/g, '$1')        // Strikethrough (~~text~~) -> text
-        .replace(/!\[(.*?)\]\(.*?\)/g, '')  // Remove Images completely
-        .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Links [text](url) -> text
-        .replace(/`{1,3}(.*?)`{1,3}/g, '$1') // Inline code `code` -> code
-        // 2. Remove block level elements
-        .replace(/^\s{0,3}(\d+\.\s|[-*+]\s)/gm, '') // List bullets/numbers
-        .replace(/^#+\s+/gm, '')            // Headings (# Heading)
-        .replace(/>/g, '')                  // Blockquotes (>)
-        // 3. Clean up whitespace
-        .replace(/(\r\n|\n|\r)/gm, " ")     // Newlines to spaces
-        .replace(/\s+/g, ' ')               // Multiple spaces to single space
+        // 1. Remove HTML tags (TipTap එකෙන් එන අලුත් දේවල් මකන්න)
+        .replace(/<[^>]*>?/gm, '') 
+        // 2. Remove Markdown formatting symbols (පරණ පෝස්ට් වල දේවල් මකන්න)
+        .replace(/(\*\*|__)(.*?)\1/g, '$2') 
+        .replace(/(\*|_)(.*?)\1/g, '$2')    
+        .replace(/~~(.*?)~~/g, '$1')        
+        .replace(/!\[(.*?)\]\(.*?\)/g, '')  
+        .replace(/\[(.*?)\]\(.*?\)/g, '$1') 
+        .replace(/`{1,3}(.*?)`{1,3}/g, '$1') 
+        // 3. Remove block level elements
+        .replace(/^\s{0,3}(\d+\.\s|[-*+]\s)/gm, '') 
+        .replace(/^#+\s+/gm, '')            
+        .replace(/>/g, '')                  
+        // 4. Clean up whitespace
+        .replace(/(\r\n|\n|\r)/gm, " ")     
+        .replace(/\s+/g, ' ')               
         .trim();
 
     if (strippedContent.length <= length) return strippedContent;
@@ -58,6 +60,7 @@ export default function PostCard({ post }: { post: Post }) {
     const authorAvatarUrl = post.profiles?.avatar_url;
     const authorDisplayName = post.author_name || post.profiles?.full_name || 'Author';
     const authorId = post.user_id; 
+
     return (
         <motion.article
             className="bg-card rounded-xl border shadow-sm overflow-hidden h-full flex flex-col group"
@@ -77,6 +80,12 @@ export default function PostCard({ post }: { post: Post }) {
                         />
                     )}
                 </Link>
+
+                {/* View Count Badge (Top Left) */}
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-background/80 text-foreground text-xs font-semibold py-1 px-2.5 rounded-full backdrop-blur-sm shadow pointer-events-none z-10">
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{post.view_count || 0}</span>
+                </div>
 
                 {/* Author Badge (Top Right) */}
                 {(post.author_name || post.profiles) && (
@@ -136,14 +145,16 @@ export default function PostCard({ post }: { post: Post }) {
                         </div>
                         <div className="flex items-center gap-1.5">
                             <Heart className="h-4 w-4" />
-                            <span>{post.like_count || 0}</span>
+                            <span className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1.5 rounded-md">
+                            <Heart className="h-3.5 w-3.5 text-rose-500" />
+                            {post.like_count || 0}
+                        </span>
                         </div>
                     </div>
                     <Link href={`/blog/${post.slug}`} passHref>
-                        <Button variant="secondary" size="sm" className="h-8 text-xs font-semibold">
-                           Read More
-                           <ArrowRight className="ml-1.5 h-4 w-4" />
-                        </Button>
+                        <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors duration-300">
+                            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:rotate-45" />
+                        </div>
                     </Link>
                 </div>
             </div>

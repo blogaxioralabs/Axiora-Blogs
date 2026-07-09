@@ -7,13 +7,15 @@ export function cn(...inputs: ClassValue[]) {
 
 const CLOUD_NAME = "dnlkjlzzx";
 
-export function getOptimizedImageUrl(url: string | null | undefined): string {
+export function getOptimizedImageUrl(url: string | null | undefined, width: number = 800): string {
   if (!url) return "/placeholder-image.jpg";
   
   if (url.includes("res.cloudinary.com")) {
-    if (url.includes("f_auto,q_auto")) return url;
-    return url.replace("/upload/", "/upload/f_auto,q_auto/");
+    if (url.includes("upload/")) {
+      return url.replace("/upload/", `/upload/f_auto,q_auto,w_${width}/`);
+    }
+    return url;
   }
   
-  return `https://res.cloudinary.com/${CLOUD_NAME}/image/fetch/f_auto,q_auto/${url}`;
+  return `https://res.cloudinary.com/${CLOUD_NAME}/image/fetch/f_auto,q_100/${url}`;
 }

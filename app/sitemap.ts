@@ -1,15 +1,17 @@
 import { MetadataRoute } from 'next'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // 1. Fetch all posts
   const { data: posts } = await supabase
     .from('posts')
     .select('slug, created_at')
+    .eq('status', 'published')
+    .limit(5000)
     .order('created_at', { ascending: false });
 
   // 2. Fetch Categories (For Programmatic SEO)

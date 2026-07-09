@@ -12,49 +12,35 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { UploadCloud, LoaderCircle, Image as ImageIcon, X, AlertCircle, PlusCircle, Info, ArrowLeft } from 'lucide-react';
+import { UploadCloud, LoaderCircle, Image as ImageIcon, X, AlertCircle, Info, ArrowLeft, PlusCircle } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 
-// Dynamically import SimpleMDE to avoid SSR issues
 const TipTapEditor = dynamic(() => import('@/components/TipTapEditor'), { ssr: false });
-// --- CLOUDINARY CONFIGURATION ---
+
 const CLOUD_NAME = "dnlkjlzzx"; 
 const UPLOAD_PRESET = "my_blog_uploads";
 
-// Types
-type Category = { id: number; name: string; };
-type SubCategory = { id: number; name: string; parent_category_id: number; };
+type NewsCategory = { id: number; name: string; slug: string; };
 
-// Function to create a unique slug
 const createUniqueSlug = async (title: string, supabase: SupabaseClient): Promise<string> => {
     const baseSlug = slugify(title, { lower: true, strict: true });
     let finalSlug = baseSlug;
     let counter = 2;
 
     while (true) {
-        const { data, error } = await supabase
-            .from('posts')
-            .select('slug')
-            .eq('slug', finalSlug)
-            .maybeSingle();
-
-        if (error && error.code !== 'PGRST116') {
-            throw new Error(`Error checking slug uniqueness: ${error.message}`);
-        }
-        if (!data) {
-            return finalSlug;
-        }
+        const { data, error } = await supabase.from('news_posts').select('slug').eq('slug', finalSlug).maybeSingle();
+        if (error && error.code !== 'PGRST116') throw new Error(`Error checking slug: ${error.message}`);
+        if (!data) return finalSlug;
         finalSlug = `${baseSlug}-${counter}`;
         counter++;
     }
 };
 
-export default function CreatePostPage() {
+export default function CreateNewsPage() {
     const supabase = createClient();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -65,8 +51,8 @@ export default function CreatePostPage() {
     const [content, setContent] = useState('');
     const [authorName, setAuthorName] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
-    const [selectedSubCategory, setSelectedSubCategory] = useState<string>('');
-    const [isFeatured, setIsFeatured] = useState(false);
+    const [newCategoryInput, setNewCategoryInput] = useState(''); 
+    
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imageUrl, setImageUrl] = useState('');
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -75,14 +61,9 @@ export default function CreatePostPage() {
     // Tag Input State
     const [tags, setTags] = useState<string[]>([]);
     const [tagInput, setTagInput] = useState('');
-
-    // New Sub-Category State
-    const [newSubCategoryInput, setNewSubCategoryInput] = useState('');
-
+    
     // Data from Supabase
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
-    const [filteredSubCategories, setFilteredSubCategories] = useState<SubCategory[]>([]);
+    const [categories, setCategories] = useState<NewsCategory[]>([]);
 
     useEffect(() => {
         const getUser = async () => {
@@ -93,69 +74,76 @@ export default function CreatePostPage() {
                     setAuthorName(user.user_metadata.full_name);
                 }
             } else {
-                 router.push('/login?message=Please log in to create a post.');
+                 router.push('/login?message=Please log in.');
             }
         };
         getUser();
+
+        const fetchCategories = async () => {
+            const { data } = await supabase.from('news_categories').select('id, name, slug');
+            setCategories(data || []);
+        };
+        fetchCategories();
     }, [supabase, router, authorName]);
 
-    // --- CLOUDINARY UPLOAD FUNCTION ---
+    // === අලුත් Category එකක් Database එකට දාන Function එක ===
+    const handleAddNewCategory = async () => {
+        const newName = newCategoryInput.trim();
+        if (!newName) { 
+            toast.error("Please enter a category name."); 
+            return; 
+        }
+
+        const slug = slugify(newName, { lower: true, strict: true });
+        
+        // බලනවා මේ නමින් එකක් දැනටමත් තියෙනවද කියලා
+        const existing = categories.find(c => c.slug === slug);
+        if (existing) {
+            toast.error("This category already exists!");
+            setSelectedCategory(String(existing.id));
+            setNewCategoryInput('');
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from('news_categories')
+            .insert({ name: newName, slug: slug })
+            .select()
+            .single();
+
+        if (error) {
+            toast.error(`Failed to add category: ${error.message}`);
+        } else {
+            toast.success(`Category "${newName}" added successfully!`);
+            setCategories([...categories, data]);
+            setSelectedCategory(String(data.id));
+            setNewCategoryInput('');
+        }
+    };
+
     const uploadImageToCloudinary = async (file: File): Promise<string> => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", UPLOAD_PRESET);
 
-        const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-            {
-                method: "POST",
-                body: formData,
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error("Image upload failed. Please check Cloudinary settings.");
-        }
-
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+        if (!response.ok) throw new Error("Image upload failed.");
         const data = await response.json();
         return data.secure_url;
     };
-
-    useEffect(() => {
-        async function fetchData() {
-            const { data: catData } = await supabase.from('categories').select('id, name');
-            const { data: subCatData } = await supabase.from('sub_categories').select('id, name, parent_category_id');
-            setCategories(catData || []);
-            setSubCategories(subCatData || []);
-        }
-        fetchData();
-    }, [supabase]);
-
-    useEffect(() => {
-        const categoryId = parseInt(selectedCategory);
-        if (categoryId) {
-            setFilteredSubCategories(subCategories.filter(sc => sc.parent_category_id === categoryId));
-        } else {
-            setFilteredSubCategories([]);
-        }
-        const currentSubCat = subCategories.find(sc => String(sc.id) === selectedSubCategory);
-        if (currentSubCat && currentSubCat.parent_category_id !== categoryId) {
-             setSelectedSubCategory('');
-        }
-    }, [selectedCategory, subCategories, selectedSubCategory]);
 
     const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 10 * 1024 * 1024) { toast.error("Image size should be less than 10MB."); return; }
-            setImageFile(file);
+            setImageFile(file); 
             setImageUrl('');
             const reader = new FileReader();
             reader.onloadend = () => setImagePreview(reader.result as string);
             reader.readAsDataURL(file);
-        } else {
-             setImageFile(null);
-             setImagePreview(null);
+        } else { 
+            setImageFile(null); 
+            setImagePreview(null); 
         }
     };
 
@@ -170,53 +158,11 @@ export default function CreatePostPage() {
 
     const removeTag = (tagToRemove: string) => setTags(tags.filter(tag => tag !== tagToRemove));
 
-    const handleAddNewSubCategory = async () => {
-        const newName = newSubCategoryInput.trim();
-        const parentId = parseInt(selectedCategory);
-        if (!newName || !parentId) {
-            toast.error("Please select a main category and enter a name for the new sub-category.");
-            return;
-        }
-
-        const parentCategoryName = categories.find(c => c.id === parentId)?.name || 'cat';
-        const uniqueSlugString = `${parentCategoryName} ${newName}`;
-        const newSlug = slugify(uniqueSlugString, { lower: true, strict: true });
-
-        const existingSub = subCategories.find(sc => sc.name.toLowerCase() === newName.toLowerCase() && sc.parent_category_id === parentId);
-        if (existingSub) {
-             toast.error(`"${newName}" already exists under "${parentCategoryName}".`);
-             setSelectedSubCategory(String(existingSub.id));
-             setNewSubCategoryInput('');
-             return;
-        }
-
-        const { data, error } = await supabase
-            .from('sub_categories')
-            .insert({ name: newName, slug: newSlug, parent_category_id: parentId })
-            .select()
-            .single();
-
-        if (error) {
-            if (error.code === '23505' && error.message.includes('sub_categories_slug_key')) {
-                toast.error(`A sub-category with a similar name might already exist causing a slug conflict. Try a slightly different name.`);
-            } else {
-                 toast.error(`Failed to add sub-category: ${error.message}`);
-            }
-        } else {
-            toast.success(`Sub-category "${newName}" added successfully!`);
-            const newSubCats = [...subCategories, data];
-            setSubCategories(newSubCats);
-            setFilteredSubCategories(newSubCats.filter(sc => sc.parent_category_id === parentId));
-            setSelectedSubCategory(String(data.id));
-            setNewSubCategoryInput('');
-        }
-    };
-
     const validateForm = () => {
         const errors: { [key: string]: string } = {};
-        if (!title.trim()) errors.title = "Title is required.";
+        if (!title.trim()) errors.title = "Headline is required.";
         if (!content.trim()) errors.content = "Content cannot be empty.";
-        if (!authorName.trim()) errors.authorName = "Author name is required.";
+        if (!authorName.trim()) errors.authorName = "Reporter name is required.";
         if (!selectedCategory) errors.category = "Please select a category.";
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
@@ -232,7 +178,6 @@ export default function CreatePostPage() {
                 const slug = await createUniqueSlug(title, supabase);
                 let finalImageUrl = imageUrl;
                 
-                // --- MODIFIED TO USE CLOUDINARY ---
                 if (imageFile) {
                     try {
                         finalImageUrl = await uploadImageToCloudinary(imageFile);
@@ -241,44 +186,25 @@ export default function CreatePostPage() {
                     }
                 }
 
-                const { data: postData, error: postError } = await supabase.from('posts').insert({
-                    user_id: currentUser.id,
+                const { error: postError } = await supabase.from('news_posts').insert({
+                    author_id: currentUser.id,
+                    author_name: authorName.trim(),
                     title: title.trim(),
                     slug: slug,
                     content: content,
-                    author_name: authorName.trim(),
                     image_url: finalImageUrl || null,
                     category_id: parseInt(selectedCategory),
-                    sub_category_id: (selectedSubCategory && selectedSubCategory !== 'none') ? parseInt(selectedSubCategory) : null,
-                    is_featured: isFeatured,
-                }).select('id').single();
+                    tags: tags,
+                    status: 'published'
+                });
 
-                if (postError) throw new Error(`Post Creation Failed: ${postError.message}`);
-                const postId = postData.id;
+                if (postError) throw new Error(postError.message);
 
-                if (tags.length > 0) {
-                     const tagUpsertPromises = tags.map(async (tagName) => {
-                        const tagSlug = slugify(tagName, { lower: true, strict: true });
-                        const { data: tag, error: tagError } = await supabase
-                            .from('tags')
-                            .upsert({ name: tagName, slug: tagSlug }, { onConflict: 'slug' })
-                            .select('id')
-                            .single();
-                        if (tagError) { console.error(`Failed to upsert tag: ${tagName}`, tagError); return null; }
-                        return { post_id: postId, tag_id: tag.id };
-                    });
-                    const postTagLinks = (await Promise.all(tagUpsertPromises)).filter(link => link !== null);
-                    if (postTagLinks.length > 0) {
-                        const { error: linkError } = await supabase.from('post_tags').insert(postTagLinks);
-                        if (linkError) { console.error("Error linking tags to post:", linkError); toast.warning("Post created, but there was an issue linking some tags."); }
-                    }
-                }
-
-                toast.success("Post published successfully!");
-                router.push(`/blog/${slug}`);
+                toast.success("News published successfully!");
+                router.push(`/news/${slug}`);
                 router.refresh();
             } catch (error: any) {
-                console.error("Error during post submission:", error);
+                console.error("Error during news submission:", error);
                 toast.error(error.message || "An unexpected error occurred.");
             }
         });
@@ -292,8 +218,8 @@ export default function CreatePostPage() {
                      <ArrowLeft className="mr-2 h-4 w-4" />
                      Back to Dashboard
                  </Link>
-                <h1 className="text-4xl font-extrabold tracking-tight mb-2">Create New Post</h1>
-                <p className="text-muted-foreground mb-8">Fill out the details below to publish a new article.</p>
+                <h1 className="text-4xl font-extrabold tracking-tight mb-2">Create New News</h1>
+                <p className="text-muted-foreground mb-8">Fill out the details below to publish a new news article.</p>
             </motion.div>
 
             <form onSubmit={handleSubmit}>
@@ -304,8 +230,8 @@ export default function CreatePostPage() {
                             <Card className="border-t-4 border-t-primary shadow-lg"><CardContent className="p-6 space-y-6">
                                 {/* Title */}
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="title" className="text-lg font-semibold">Post Title</Label>
-                                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., The Future of Quantum Computing" required disabled={isPending} className="text-lg h-12" />
+                                    <Label htmlFor="title" className="text-lg font-semibold">News Headline</Label>
+                                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Global Tech Innovations Reach New Heights" required disabled={isPending} className="text-lg h-12" />
                                     {formErrors.title && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.title}</p>}
                                 </div>
                                 
@@ -321,7 +247,7 @@ export default function CreatePostPage() {
 </div>
                                     {formErrors.content && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.content}</p>}
                                     
-                                    {/* Pro Tip */}
+                                    {/* Pro Tip from Blog */}
                                     <div className="mt-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground/80">
     <Info className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
     <p>
@@ -338,61 +264,51 @@ export default function CreatePostPage() {
                          {/* Publishing Details */}
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                             <Card><CardHeader><CardTitle>Publishing Details</CardTitle></CardHeader><CardContent className="space-y-6">
-                                {/* Author Name */}
+                                {/* Reporter Name */}
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="author_name">Author Name</Label>
+                                    <Label htmlFor="author_name">Reporter Name</Label>
                                     <Input id="author_name" value={authorName} onChange={(e) => setAuthorName(e.target.value)} placeholder="Your display name" required disabled={isPending} />
                                     {formErrors.authorName && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.authorName}</p>}
                                 </div>
-                                {/* Featured Checkbox */}
-                                <div className="flex items-center space-x-2 border p-3 rounded-md bg-secondary/20">
-                                    <Checkbox id="is_featured" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(!!checked)} disabled={isPending} />
-                                    <Label htmlFor="is_featured" className="font-medium cursor-pointer">Mark as Featured Post</Label>
-                                </div>
+                                
                                 {/* Submit Button */}
                                 <Button type="submit" className="w-full font-bold h-12 text-base shadow-lg hover:shadow-xl transition-all" disabled={isPending || !title || !content}>
-                                    {isPending ? <><LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> Publishing...</> : 'Publish Post'}
+                                    {isPending ? <><LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> Publishing...</> : 'Publish News'}
                                 </Button>
                             </CardContent></Card>
                         </motion.div>
 
-                        {/* Organization */}
+                        {/* Categorization */}
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
                             <Card><CardHeader><CardTitle>Categorization</CardTitle></CardHeader><CardContent className="space-y-6">
                                 {/* Category */}
                                 <div className="space-y-1.5">
                                     <Label>Category</Label>
                                     <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isPending}>
-                                        <SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
                                         <SelectContent>{categories.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}</SelectContent>
                                     </Select>
                                     {formErrors.category && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.category}</p>}
-                                </div>
-                                {/* Sub-category (Tag) */}
-                                <div className="space-y-1.5">
-                                    <Label>Sub-category (Tag)</Label>
-                                    <Select
-                                        value={selectedSubCategory}
-                                        onValueChange={setSelectedSubCategory}
-                                        disabled={isPending || !selectedCategory}
-                                    >
-                                        <SelectTrigger><SelectValue placeholder="Select a tag (optional)" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">None</SelectItem>
-                                            {filteredSubCategories.map(sc => <SelectItem key={sc.id} value={String(sc.id)}>{sc.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                    {/* Add New Sub-Category */}
+                                    
+                                    {/* Add New Category - Styled like Blog's Add Sub-category */}
                                     <div className="flex items-center gap-2 mt-2 pt-2 border-t">
-                                        <Input value={newSubCategoryInput} onChange={(e) => setNewSubCategoryInput(e.target.value)} placeholder="New tag name" className="h-8 text-xs" disabled={isPending || !selectedCategory} />
-                                        <Button type="button" variant="outline" size="icon" className="h-8 w-8 flex-shrink-0" onClick={handleAddNewSubCategory} disabled={isPending || !selectedCategory || !newSubCategoryInput.trim()} aria-label="Add new sub-category"><PlusCircle size={16} /></Button>
+                                        <Input value={newCategoryInput} onChange={(e) => setNewCategoryInput(e.target.value)} placeholder="New category name" className="h-8 text-xs" disabled={isPending} />
+                                        <Button type="button" variant="outline" size="icon" className="h-8 w-8 flex-shrink-0" onClick={handleAddNewCategory} disabled={isPending || !newCategoryInput.trim()} aria-label="Add new category">
+                                            <PlusCircle size={16} />
+                                        </Button>
                                     </div>
                                 </div>
-                                {/* Additional Tags */}
+
+                                {/* Tags (Keywords) */}
                                 <div className="space-y-1.5">
                                     <Label htmlFor="tags">Keywords (Hashtags)</Label>
                                     <div className="flex flex-wrap items-center gap-2 rounded-md border p-2 mt-1 min-h-[42px]">
-                                        {tags.map(tag => (<div key={tag} className="flex items-center gap-1 bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full">{tag}<button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive"><X size={12} /></button></div>))}
+                                        {tags.map(tag => (
+                                            <div key={tag} className="flex items-center gap-1 bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full">
+                                                {tag}
+                                                <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive"><X size={12} /></button>
+                                            </div>
+                                        ))}
                                         <Input id="tags" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleTagKeyDown} placeholder={tags.length === 0 ? "Type and press Enter..." : "Add more..."} className="flex-1 border-0 h-auto p-0 bg-transparent shadow-none focus-visible:ring-0 text-sm" disabled={isPending} />
                                     </div>
                                 </div>
@@ -424,7 +340,12 @@ export default function CreatePostPage() {
                                 {/* Separator */}
                                 <div className="relative text-center"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">OR</span></div></div>
                                 {/* Upload Button */}
-                                <Button asChild variant="outline" className="w-full cursor-pointer border-dashed"><label htmlFor="image-file"><UploadCloud className="mr-2 h-4 w-4" /> Upload from Device<input id="image-file" type="file" className="sr-only" accept="image/*" onChange={handleImageFileChange} disabled={isPending} /></label></Button>
+                                <Button asChild variant="outline" className="w-full cursor-pointer border-dashed">
+                                    <label htmlFor="image-file">
+                                        <UploadCloud className="mr-2 h-4 w-4" /> Upload from Device
+                                        <input id="image-file" type="file" className="sr-only" accept="image/*" onChange={handleImageFileChange} disabled={isPending} />
+                                    </label>
+                                </Button>
                             </CardContent></Card>
                         </motion.div>
                     </div>

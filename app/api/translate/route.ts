@@ -1,83 +1,90 @@
-// app/api/translate/route.ts
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import translate from 'google-translate-api-x';
 import { NextResponse, NextRequest } from 'next/server';
 
-export const maxDuration = 60; // Optional: Use edge runtime
+export const maxDuration = 60; 
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
-function getLanguageName(code: string): string {
-    const languages: { [key: string]: string } = {
-        en: 'English', si: 'Sinhala', ta: 'Tamil', hi: 'Hindi',
-        es: 'Spanish', fr: 'French', de: 'German', zh: 'Chinese',
-        ja: 'Japanese', ar: 'Arabic',
-    };
-    return languages[code] || code;
+// ලොකු Article එකක් ආරක්‍ෂිතව කෑලි වලට කැඩීම (Chunking)
+function chunkText(text: string, maxLength: number): string[] {
+  const chunks: string[] = [];
+  let currentChunk = '';
+  
+  const lines = text.split('\n');
+  
+  for (const line of lines) {
+    if ((currentChunk.length + line.length) > maxLength) {
+      if (currentChunk) chunks.push(currentChunk);
+      currentChunk = line + '\n';
+    } else {
+      currentChunk += line + '\n';
+    }
+  }
+  if (currentChunk) chunks.push(currentChunk);
+  return chunks;
 }
 
 export async function POST(req: NextRequest) {
   try {
-
     const { title, content, targetLanguage } = await req.json();
 
     if (!title || !content || !targetLanguage) {
-      return NextResponse.json({ error: 'Title, content, and target language are required' }, { status: 400 });
-    }
-    // ==========================================================
-
-    if (!process.env.GEMINI_API_KEY) {
-       return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Title, content, and target language are required' },
+        { status: 400 }
+      );
     }
 
-    const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash", 
-         safetySettings: [
-             { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-             
-         ],
-    });
+    const translateOptions = {
+      to: targetLanguage,
+      autoCorrect: true,
+    };
 
-    const targetLanguageName = getLanguageName(targetLanguage);
-
-    const prompt = `Translate the following title and content into formal ${targetLanguageName}.
-Return the result ONLY as a valid JSON object with the keys "translatedTitle" and "translatedContent".
-Do not add any extra explanations, introductions, or markdown formatting around the JSON object.
-
-Input:
-{
-  "title": "${title}",
-  "content": """
-${content}
-"""
-}
-
-Output JSON:`;
-    // ===============================================================
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const responseText = response.text();
-
-   
-    try {
-       
-        const cleanedText = responseText.replace(/^```json\s*|```$/g, '').trim();
-        const translatedData = JSON.parse(cleanedText);
-
-        // Validate the structure
-        if (typeof translatedData.translatedTitle === 'string' && typeof translatedData.translatedContent === 'string') {
-            return NextResponse.json(translatedData);
-        } else {
-            throw new Error('Invalid JSON structure received from translation API');
+    // ආරක්ෂිතව Translate කරන Function එක (Fail වුණොත් Original Text එක දෙනවා)
+    const safeTranslate = async (text: string, retries = 2) => {
+        if (!text.trim()) return text;
+        
+        for (let i = 0; i < retries; i++) {
+            try {
+                const res = await translate(text, translateOptions);
+                // Null check එක - Result එකක් ඇවිත් නම් විතරක් return කරනවා
+                if (res && res.text) return res.text;
+            } catch (error) {
+                if (i === retries - 1) {
+                    console.error("[TRANSLATE_CHUNK_ERROR]", error);
+                    // Error ආවොත් මුලින් තිබ්බ භාෂාවෙන්ම හරි පෙන්නනවා (Page එක Crash වෙන්නෙ නෑ)
+                    return text; 
+                }
+                // තත්පර භාගයක් ඉඳලා ආයෙත් Try කරනවා (Retry mechanism)
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
         }
-    } catch (parseError) {
-        console.error('Failed to parse translation JSON:', parseError, 'Raw response:', responseText);
-        return NextResponse.json({ translatedTitle: title, translatedContent: responseText });
+        return text;
+    };
+
+    // 1. Title එක Translate කිරීම
+    const translatedTitle = await safeTranslate(title);
+
+    // 2. Content එක Translate කිරීම (අකුරු 3000 කෑලි වලට කඩලා)
+    const textChunks = chunkText(content, 3000);
+    let translatedContent = '';
+
+    for (const chunk of textChunks) {
+         const translatedChunk = await safeTranslate(chunk);
+         translatedContent += translatedChunk;
+         
+         // Google එකෙන් Block කරන එක නවත්වන්න පොඩි වෙලාවක් (Delay එකක්) තියනවා
+         await new Promise(resolve => setTimeout(resolve, 300)); 
     }
-    // ==============================================================
+
+    return NextResponse.json({
+      translatedTitle,
+      translatedContent,
+    });
 
   } catch (error: any) {
     console.error('[TRANSLATE_API_ERROR]', error);
-    return NextResponse.json({ error: `Translation failed: ${error.message || 'Unknown error'}` }, { status: 500 });
+    return NextResponse.json(
+      { error: `Translation failed: ${error.message || 'Unknown error'}` },
+      { status: 500 }
+    );
   }
 }

@@ -10,20 +10,23 @@ import { cn } from '@/lib/utils';
 interface LikeButtonProps {
   postId: number;
   initialLikes: number;
+  postType?: 'blog' | 'news'; // අලුතින් එකතු කළ prop එක (Default: 'blog')
 }
 
-export function LikeButton({ postId, initialLikes }: LikeButtonProps) {
+export function LikeButton({ postId, initialLikes, postType = 'blog' }: LikeButtonProps) {
   const [likes, setLikes] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
 
-  
+  // Storage key එක postType එක අනුව වෙනස් වෙනවා (ID clash නොවෙන්න)
+  const storageKey = postType === 'news' ? 'liked-news-posts' : 'liked-posts';
+
   useEffect(() => {
-    const likedPosts = JSON.parse(localStorage.getItem('liked-posts') || '{}');
+    const likedPosts = JSON.parse(localStorage.getItem(storageKey) || '{}');
     if (likedPosts[postId]) {
       setIsLiked(true);
     }
-  }, [postId]);
+  }, [postId, storageKey]);
 
   const handleLike = async () => {
     if (isLiked || isLiking) return;
@@ -32,23 +35,24 @@ export function LikeButton({ postId, initialLikes }: LikeButtonProps) {
     setLikes((prevLikes) => prevLikes + 1);
     setIsLiked(true);
 
-    
-    const likedPosts = JSON.parse(localStorage.getItem('liked-posts') || '{}');
+    const likedPosts = JSON.parse(localStorage.getItem(storageKey) || '{}');
     likedPosts[postId] = true;
-    localStorage.setItem('liked-posts', JSON.stringify(likedPosts));
+    localStorage.setItem(storageKey, JSON.stringify(likedPosts));
 
-    
-    const { error } = await supabase.rpc('increment_likes', {
+    // Post type එක අනුව අදාළ function එක තෝරනවා
+    const functionName = postType === 'news' ? 'increment_news_likes' : 'increment_likes';
+
+    const { error } = await supabase.rpc(functionName, {
       post_id_to_inc: postId,
     });
 
     if (error) {
       console.error('Error incrementing likes:', error);
-     
+      
       setLikes((prevLikes) => prevLikes - 1);
       setIsLiked(false);
       delete likedPosts[postId];
-      localStorage.setItem('liked-posts', JSON.stringify(likedPosts));
+      localStorage.setItem(storageKey, JSON.stringify(likedPosts));
     }
     
     setIsLiking(false);

@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; //
 import { toast, Toaster } from 'sonner';
 import readingTime from 'reading-time';
 import type { Post } from '@/lib/types';
+import rehypeRaw from 'rehype-raw';
 
 const supabase = createClient();
 
@@ -96,6 +97,8 @@ export default function BlogPostClient({ initialPost }: { initialPost: Post }) {
     const readingStats = readingTime(displayContent || '');
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
     const url = `${siteUrl}/blog/${post.slug}`;
+    
+    const isHTML = (text: string) => /<[a-z][\s\S]*>/i.test(text);
 
     return (
         <>
@@ -156,7 +159,18 @@ export default function BlogPostClient({ initialPost }: { initialPost: Post }) {
                                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" /><span className="ml-2 text-muted-foreground">Translating...</span>
                             </div>
                         )}
-                        <ReactMarkdown rehypePlugins={[rehypePrism]} components={{ img: MarkdownImage }}>{displayContent || ''}</ReactMarkdown>
+                        
+                        {isHTML(displayContent || '') ? (
+                            <div 
+                                className="custom-tiptap-styles" 
+                                dangerouslySetInnerHTML={{ __html: displayContent || '' }} 
+                            />
+                        ) : (
+                            <ReactMarkdown rehypePlugins={[rehypePrism, rehypeRaw]} components={{ img: MarkdownImage }}>
+                                {displayContent || ''}
+                            </ReactMarkdown>
+                        )}
+                        
                     </div>
 
                     {/* Tags */}

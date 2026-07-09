@@ -129,49 +129,77 @@ function DesktopFilterContent({ categories, subCategories, selectedValue, setSel
   };
 
   return (
-    <div className="flex">
-      {/* Category List */}
-      <div className="w-[190px] border-r p-2 space-y-1">
-        <CategoryItem label="All Categories" onMouseEnter={() => handleCategoryHover(null)} onClick={() => setSelectedValue('all')} isSelected={selectedValue === 'all'} />
+   <div className="flex h-[400px] w-[550px] overflow-hidden bg-background rounded-lg shadow-xl border border-border/50">
+      {/* Category List (වම් පැත්තේ තීරුව) */}
+      {/* FIX: Categories ප්‍රමාණය වැඩි වුවහොත් scroll වීමට overflow-y-auto සහ custom-scrollbar එක් කලා */}
+      <div className="w-[190px] border-r p-2 space-y-1 overflow-y-auto custom-scrollbar shrink-0">
+        <CategoryItem 
+          label="All Categories" 
+          onMouseEnter={() => handleCategoryHover(null)} 
+          onClick={() => setSelectedValue('all')} 
+          isSelected={selectedValue === 'all'} 
+        />
         {categories.map((cat) => (
-          <CategoryItem key={cat.id} label={cat.name} onMouseEnter={() => handleCategoryHover(cat.id)} onClick={() => setSelectedValue(`cat-${cat.id}`)} isSelected={selectedValue.startsWith('cat-') && parseInt(selectedValue.split('-')[1]) === cat.id} />
+          <CategoryItem 
+            key={cat.id} 
+            label={cat.name} 
+            onMouseEnter={() => handleCategoryHover(cat.id)} 
+            onClick={() => setSelectedValue(`cat-${cat.id}`)} 
+            isSelected={selectedValue.startsWith('cat-') && parseInt(selectedValue.split('-')[1]) === cat.id} 
+          />
         ))}
       </div>
 
-      {/* Sub-Category List & Search Bar */}
-      <div className="flex-1 p-2 min-h-[200px] flex flex-col"> {/* Added flex-col */}
+      {/* Sub-Category List & Search Bar (දකුණු පැත්තේ තීරුව) */}
+      {/* FIX: සම්පූර්ණ layout එකම flex-col සහ h-full මඟින් උස පාලනය කර ඇත */}
+      <div className="flex-1 p-2 flex flex-col h-full overflow-hidden"> 
         {/* Search Bar */}
         {activeCategoryId && ( // Show only when a category is active
-          <div className="relative mb-2 px-1">
+          // FIX: shrink-0 මඟින් සර්ච් බාර් එක පොඩි වී මැකී යාම වළක්වයි
+          <div className="relative mb-2 px-1 shrink-0"> 
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search tags..."
               value={subCategorySearch}
               onChange={(e) => setSubCategorySearch(e.target.value)}
-              className="h-8 pl-8 text-xs" // Adjusted size and padding
+              className="h-8 pl-8 text-xs w-full"
             />
           </div>
         )}
 
-        {/* Sub-Category List */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar"> {/* Added scroll */}
+        {/* Sub-Category Scroll Container */}
+        {/* FIX: මෙම කොටස ස්වාධීනව scroll වීමට flex-1 සහ overflow-y-auto ලබා දී ඇත */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-1"> 
           <AnimatePresence mode="wait">
-            <motion.div key={activeCategoryId + subCategorySearch} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2, ease: 'easeInOut' }} className="h-full">
+            <motion.div 
+              key={activeCategoryId + subCategorySearch} 
+              initial={{ opacity: 0, x: -10 }} 
+              animate={{ opacity: 1, x: 0 }} 
+              exit={{ opacity: 0, x: 10 }} 
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+            >
               {activeCategoryId && activeSubCategories.length > 0 ? (
                 // Display filtered sub-categories
                 <div className="flex flex-col space-y-1">
-                  <p className="px-3 py-2 text-sm font-semibold">Tags</p>
+                  <p className="px-3 py-1 text-xs font-bold text-muted-foreground/70 uppercase tracking-wider">Tags</p>
                   {activeSubCategories.map(sub => (
-                    <SubCategoryItem key={sub.id} label={sub.name} onClick={() => setSelectedValue(`sub-${sub.id}`)} isSelected={selectedValue === `sub-${sub.id}`}/>
+                    <SubCategoryItem 
+                      key={sub.id} 
+                      label={sub.name} 
+                      onClick={() => setSelectedValue(`sub-${sub.id}`)} 
+                      isSelected={selectedValue === `sub-${sub.id}`}
+                    />
                   ))}
                 </div>
               ) : activeCategoryId && subCategorySearch && activeSubCategories.length === 0 ? (
                 // Display no results message when searching
-                <div className="h-full flex items-center justify-center text-sm text-muted-foreground p-4 text-center">No tags found for "{subCategorySearch}"</div>
+                <div className="h-32 flex items-center justify-center text-sm text-muted-foreground p-4 text-center">
+                  No tags found for "{subCategorySearch}"
+                </div>
               ) : (
                 // Default messages
-                <div className="h-full flex items-center justify-center text-sm text-muted-foreground p-4 text-center">
+                <div className="h-32 flex items-center justify-center text-sm text-muted-foreground p-4 text-center">
                   {activeCategoryId ? 'No tags for this category' : 'Hover a category to see tags'}
                 </div>
               )}

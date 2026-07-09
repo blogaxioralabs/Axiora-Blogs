@@ -19,14 +19,11 @@ import { Label } from '@/components/ui/label';
 import { UploadCloud, LoaderCircle, Image as ImageIcon, X, AlertCircle, PlusCircle, ArrowLeft, Info } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
-// Rich Text Editor (Markdown)
-import "easymde/dist/easymde.min.css";
-import type { Options } from 'easymde';
 import type { User } from '@supabase/supabase-js';
 import type { Post } from '@/lib/types';
 
 // Dynamically import SimpleMDE to avoid SSR issues
-const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false });
+const TipTapEditor = dynamic(() => import('@/components/TipTapEditor'), { ssr: false });
 
 type Category = { id: number; name: string; };
 type SubCategory = { id: number; name: string; parent_category_id: number; };
@@ -72,46 +69,16 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     const [categories, setCategories] = useState<Category[]>([]);
     const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
     const [filteredSubCategories, setFilteredSubCategories] = useState<SubCategory[]>([]);
-
-    const imageUploadFunction = (file: File, onSuccess: (url: string) => void, onError: (error: string) => void) => {
-        const handleUpload = async () => {
-            if (!file || !currentUser) return;
-            const fileName = `${currentUser.id}/${Date.now()}-${slugify(file.name, { lower: true })}`;
-            const { error: uploadError } = await supabase.storage.from('post_images').upload(fileName, file);
-            
-            if (uploadError) { 
-                onError(`Image Upload Failed: ${uploadError.message}`); 
-                return; 
-            }
-            
-            const { data: { publicUrl } } = supabase.storage.from('post_images').getPublicUrl(fileName);
-            onSuccess(publicUrl);
-        };
-        handleUpload();
+    
+    const uploadImageToCloudinary = async (file: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "my_blog_uploads"); // ඔයාගේ preset එක
+        const response = await fetch(`https://api.cloudinary.com/v1_1/dnlkjlzzx/image/upload`, { method: "POST", body: formData });
+        if (!response.ok) throw new Error("Image upload failed.");
+        const data = await response.json();
+        return data.secure_url;
     };
-
-    // --- ENHANCED EDITOR OPTIONS (Word-like Features) ---
-    const mdeOptions = useMemo((): Options => ({
-        autofocus: false,
-        spellChecker: false,
-        uploadImage: true,
-        imageUploadFunction: imageUploadFunction,
-        imageAccept: "image/png, image/jpeg, image/gif, image/webp",
-        imageMaxSize: 10 * 1024 * 1024,
-        placeholder: "Edit your article content...",
-        minHeight: "400px", // Professional height
-        // Full Toolbar Configuration
-        toolbar: [
-            "bold", "italic", "strikethrough", "heading", "|", 
-            "quote", "code", "unordered-list", "ordered-list", "clean-block", "|", 
-            "link", "image", "table", "horizontal-rule", "|", 
-            "preview", "side-by-side", "fullscreen", "|", 
-            "guide"
-        ],
-        status: ["autosave", "lines", "words", "cursor"],
-        imageTexts: { sbInit: "Drop an image here to upload it..." },
-    }), [supabase, currentUser]);
-
     // Fetch Post Data
     useEffect(() => {
         async function fetchPostAndCategories() {
@@ -436,17 +403,21 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                                 {/* Content - Enhanced Editor */}
                                 <div className="space-y-2">
                                     <Label htmlFor="content" className="text-lg font-semibold">Article Content</Label>
-                                    <div className="prose-editor-wrapper">
-                                        <SimpleMDE options={mdeOptions} value={content} onChange={setContent} />
-                                    </div>
+                                    <div className="prose-editor-wrapper mt-2">
+    <TipTapEditor 
+        content={content} 
+        onChange={setContent} 
+        onImageUpload={uploadImageToCloudinary} // දැන් මේක Error එකක් නැතුව වැඩ කරයි!
+    />
+</div>
                                     {formErrors.content && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle size={14}/>{formErrors.content}</p>}
                                     {/* Pro Tip */}
                                     <div className="mt-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground/80">
-                                        <Info className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
-                                        <p>
-                                            <strong>Pro Tip:</strong> Use <strong>"Side-by-Side" (F9)</strong> or <strong>"Fullscreen" (F11)</strong> buttons for a better writing experience.
-                                        </p>
-                                    </div>
+    <Info className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
+    <p>
+        <strong>Pro Tip:</strong> You can resize images by dragging their bottom-right corner. Click inside a table or an image to reveal advanced formatting controls!
+    </p>
+</div>
                                 </div>
                             </CardContent></Card>
                         </motion.div>

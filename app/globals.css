@@ -254,3 +254,71 @@
   --tw-prose-bullets: #000000 !important;
   --tw-prose-counters: #000000 !important;
 }
+
+.prose ol[type="I"] {
+  list-style-type: upper-roman !important;
+}
+
+.prose ol[type="i"] {
+  list-style-type: lower-roman !important;
+}
+
+/* Fix for FontAwesome Dropdowns in EasyMDE */
+.editor-toolbar .fa-circle.text-red-500 { color: #ef4444 !important; }
+.editor-toolbar .fa-circle.text-blue-500 { color: #3b82f6 !important; }
+.editor-toolbar .fa-circle.text-green-500 { color: #22c55e !important; }
+
+/* EasyMDE Dropdown menu background fix for Dark Mode */
+.dark .editor-toolbar .custom-menu {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+.dark .editor-toolbar .custom-menu button:hover {
+  background-color: #1e293b !important;
+}
+
+/* Custom Styles for TipTap Rendered Content */
+.custom-tiptap-styles table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  margin: 1.5rem 0 !important;
+}
+.custom-tiptap-styles td, .custom-tiptap-styles th {
+  border: 1px solid hsl(var(--border)) !important;
+  padding: 10px !important;
+}
+.custom-tiptap-styles th {
+  background-color: hsl(var(--muted)) !important;
+  font-weight: bold !important;
+}
+.custom-tiptap-styles img[data-align="left"] {
+  float: left;
+  margin: 0.5rem 1.5rem 1rem 0;
+}
+.custom-tiptap-styles img[data-align="right"] {
+  float: right;
+  margin: 0.5rem 0 1rem 1.5rem;
+}
+.custom-tiptap-styles img[data-align="center"] {
+  display: block;
+  margin: 1.5rem auto;
+  clear: both;
+}
+
+.goog-te-banner-frame.skiptranslate {
+    display: none !important;
+}
+body {
+    top: 0px !important;
+}
+.goog-tooltip {
+    display: none !important;
+}
+.goog-tooltip:hover {
+    display: none !important;
+}
+.goog-text-highlight {
+    background-color: transparent !important;
+    border: none !important; 
+    box-shadow: none !important;
+}

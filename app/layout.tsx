@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { Suspense } from 'react';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -130,7 +131,13 @@ export default function RootLayout({
       </head>
       <body className={`min-h-screen bg-background font-sans antialiased ${inter.className}`}>
         <div className="relative flex min-h-screen flex-col overflow-x-hidden">
-            <Navbar />
+            <Suspense fallback={
+              <div className="sticky top-0 z-50 w-full pt-4 pb-6 px-4">
+                <div className="mx-auto max-w-screen-2xl rounded-full border border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-neutral-950/70 backdrop-blur-xl h-16" />
+              </div>
+            }>
+              <Navbar />
+            </Suspense>
             <main className="flex-1">{children}</main>
             <Footer />
             <Toaster richColors />
