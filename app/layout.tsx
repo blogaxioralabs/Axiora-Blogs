@@ -147,6 +147,26 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
         />
+        {/* --- WebSite Schema with SearchAction (Google Sitelinks Searchbox) --- */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'Axiora Blogs',
+              url: 'https://www.axiorablogs.com',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: 'https://www.axiorablogs.com/search?q={search_term_string}',
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
       </head>
       <body className={`min-h-screen bg-background font-sans antialiased ${inter.className}`}>
         <div className="relative flex min-h-screen flex-col overflow-x-hidden">

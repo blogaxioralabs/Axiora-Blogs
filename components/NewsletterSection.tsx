@@ -18,12 +18,15 @@ export function NewsletterSection() {
         
         setStatus('loading');
         
-        // API simulation
-        setTimeout(() => {
-            setStatus('success');
-            setEmail('');
-            setTimeout(() => setStatus('idle'), 3500);
-        }, 1500);
+        fetch('/api/newsletter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        }).catch(() => {});
+        
+        setStatus('success');
+        setEmail('');
+        setTimeout(() => setStatus('idle'), 3500);
     };
 
     // Animation variants for staggered effect (Variants type එක මෙතනට දුන්නා)

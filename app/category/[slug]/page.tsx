@@ -101,12 +101,33 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         notFound();
     }
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
+
+    const collectionJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: `${category.name} — Category | Axiora Blogs`,
+      description: `Explore world-class articles about ${category.name} on Axiora Blogs.`,
+      url: `${siteUrl}/category/${category.slug}`,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'Axiora Blogs',
+        url: siteUrl,
+      },
+    };
+
     return (
-      <CategoryPageClient
-        category={category as Category}
-        initialPosts={posts}
-        allSubCategories={allSubCategories}
-      />
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        />
+        <CategoryPageClient
+          category={category as Category}
+          initialPosts={posts}
+          allSubCategories={allSubCategories}
+        />
+      </>
     );
 }
 

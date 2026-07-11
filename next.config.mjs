@@ -18,7 +18,6 @@ const nextConfig = {
             { protocol: 'https', hostname: 'oskbnnusqmdzysgtrovl.supabase.co' },
             { protocol: 'https', hostname: 'res.cloudinary.com' },
             { protocol: 'https', hostname: 'picsum.photos' },
-            { protocol: 'https', hostname: '**' },
         ],
         formats: ['image/avif', 'image/webp'],
         // Optimized sizes for responsive images (reduces wasted bytes)

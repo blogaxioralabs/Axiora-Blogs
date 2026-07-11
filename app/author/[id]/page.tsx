@@ -136,6 +136,25 @@ export default async function AuthorPage({ params }: { params: { id: string } })
         </div>
       </div>
 
+      {/* Person schema for E-E-A-T */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Person',
+            name: profile.full_name || 'Axiora Author',
+            url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com'}/author/${authorId}`,
+            image: profile.avatar_url || undefined,
+            description: `Content Creator at Axiora Blogs. ${postsWithAuthor.length} articles published.`,
+            worksFor: {
+              '@type': 'Organization',
+              name: 'Axiora Blogs',
+              url: process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com',
+            },
+          }),
+        }}
+      />
       {/* 2. Posts Grid Section (Updated for 3-Column Layout) */}
       <div className="container py-12 md:py-16">
         <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">

@@ -32,7 +32,6 @@ export default function LCPImage({
   const lcpProps: Omit<Partial<ImageProps>, 'role'> = isLCP
     ? {
         priority: true,
-        fetchPriority: 'high' as const,
         loading: 'eager' as const,
       }
     : {

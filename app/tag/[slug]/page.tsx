@@ -104,7 +104,27 @@ export default async function TagPage({ params }: TagPageProps) {
         notFound();
     }
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
+
+    const collectionJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: `#${tag.name} — Tag | Axiora Blogs`,
+      description: `Explore all articles tagged with #${tag.name} on Axiora Blogs.`,
+      url: `${siteUrl}/tag/${params.slug}`,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'Axiora Blogs',
+        url: siteUrl,
+      },
+    };
+
     return (
+        <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        />
         <div className="container py-8 md:py-12">
             <div className="mb-4">
                 <BackButton />
@@ -124,6 +144,7 @@ export default async function TagPage({ params }: TagPageProps) {
                 <p className="text-center text-muted-foreground mt-12">No posts found with this tag yet.</p>
             )}
         </div>
+        </>
     );
 }
 

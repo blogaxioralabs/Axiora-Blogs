@@ -33,7 +33,14 @@ export async function generateMetadata(
     return {
         title: `${news.title} | Axiora Blogs News`,
         description: description,
-        alternates: { canonical: url },
+        alternates: {
+            canonical: url,
+            languages: {
+                'en-US': url,
+                'en': url,
+                'x-default': url,
+            }
+        },
         openGraph: {
             title: `${news.title} — News | Axiora Blogs`,
             description: description,

@@ -7,15 +7,18 @@ import type { Post } from '@/lib/types';
 import type { Metadata, ResolvingMetadata } from 'next';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { getOptimizedImageUrl } from "@/lib/utils";
+import { cache } from 'react';
 import readingTime from 'reading-time'; 
+import SmartFAQ from '@/components/SmartFAQ';
 
-
+// ISR: Regenerate page every 60s for faster response times (LCP boost)
+export const revalidate = 60;
 type ProfileInfo = {
     avatar_url: string | null;
     full_name: string | null;
 } | null;
 
-async function getPostData(slug: string): Promise<(Omit<Post, 'profiles'> & { user_id?: string | null }) | null> {
+const getPostData = cache(async (slug: string): Promise<(Omit<Post, 'profiles'> & { user_id?: string | null }) | null> => {
     const supabase = createClient();
     const { data: postData, error } = await supabase
         .from('posts')
@@ -35,7 +38,7 @@ async function getPostData(slug: string): Promise<(Omit<Post, 'profiles'> & { us
     }
     // Return post data without profile initially
     return postData as (Omit<Post, 'profiles'> & { user_id?: string | null });
-}
+});
 
 async function getProfileData(userId: string | null | undefined): Promise<ProfileInfo> {
     if (!userId) return null;
@@ -118,6 +121,8 @@ export async function generateMetadata(
           canonical: url,
           languages: {
               'en-US': url,
+              'en': url,
+              'x-default': url,
           }
       },
       other: {
@@ -153,7 +158,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
     const jsonLd = {
         '@context': 'https://schema.org',
-        '@type': 'NewsArticle', 
+        '@type': 'BlogPosting', 
         headline: postWithProfile.title,
         
         // ADDED: Upgraded image to ImageObject Schema with strict dimensions
@@ -195,36 +200,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         timeRequired: `PT${Math.ceil(readingStats.minutes)}M` // ISO 8601 duration format
     };
 
-    const breadcrumbJsonLd = {  
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-        {
-            '@type': 'ListItem',
-            position: 1,
-            name: 'Home',
-            item: siteUrl
-        },
-        {
-            '@type': 'ListItem',
-            position: 2,
-            name: 'Blog',
-            item: `${siteUrl}/blog`
-        },
-        {
-            '@type': 'ListItem',
-            position: 3,
-            name: postWithProfile.categories?.name || 'Category',
-            item: `${siteUrl}/category/${postWithProfile.categories?.slug}`
-        },
-        {
-            '@type': 'ListItem',
-            position: 4,
-            name: postWithProfile.title,
-            item: `${siteUrl}/blog/${postWithProfile.slug}`
-        }
-    ]
-};
+    // Breadcrumb JSON-LD is handled by the Breadcrumbs component (no duplicate needed)
 
     // 4. Pass the combined data to the client component and Inject JSON-LD
     return (
@@ -234,10 +210,8 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-            />
+            {/* Auto-detect FAQ sections and inject FAQPage schema */}
+            <SmartFAQ content={postWithProfile.content} pageUrl={`${siteUrl}/blog/${postWithProfile.slug}`} />
             <div className="container py-6">
        <Breadcrumbs 
          items={[

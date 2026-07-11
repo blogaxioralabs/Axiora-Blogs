@@ -47,7 +47,7 @@ export function TableOfContents({ content }: { content: string }) {
     if (headings.length === 0) return null;
 
     return (
-        <nav className="sticky top-24">
+        <nav className="sticky top-24" aria-label="Table of contents">
             <h2 className="font-bold mb-2">On This Page</h2>
             <ul className="space-y-2 text-sm">
                 {headings.map(({ level, text, slug }) => (

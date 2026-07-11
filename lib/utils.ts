@@ -17,5 +17,5 @@ export function getOptimizedImageUrl(url: string | null | undefined, width: numb
     return url;
   }
   
-  return `https://res.cloudinary.com/${CLOUD_NAME}/image/fetch/f_auto,q_100/${url}`;
+  return `https://res.cloudinary.com/${CLOUD_NAME}/image/fetch/f_auto,q_auto/${url}`;
 }
