@@ -4,7 +4,8 @@ export const revalidate = 300;
 import PostCard from '@/components/PostCard';
 import { notFound } from 'next/navigation';
 import { BackButton } from '@/components/BackButton';
-import { Post } from '@/lib/types'; // Import Post type
+import { Post } from '@/lib/types';
+import type { Metadata } from 'next';
 
 type SubCategoryPageProps = {
   params: { slug: string };
@@ -91,6 +92,23 @@ async function getSubCategoryData(slug: string) {
     }
 
     return { subCategory, posts: finalPosts };
+}
+
+// --- SEO: generateMetadata for SubCategory pages ---
+export async function generateMetadata({ params }: SubCategoryPageProps): Promise<Metadata> {
+    const { subCategory } = await getSubCategoryData(params.slug);
+    if (!subCategory) return { title: 'Sub-Category Not Found' };
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
+    return {
+        title: `${subCategory.name} — Sub-Category | Axiora Blogs`,
+        description: `Explore all articles under the "${subCategory.name}" sub-category on Axiora Blogs. Stay updated with the latest insights and tutorials.`,
+        alternates: { canonical: `${siteUrl}/sub-category/${params.slug}` },
+        openGraph: {
+            title: `${subCategory.name} — Sub-Category | Axiora Blogs`,
+            description: `Browse ${subCategory.name} articles on Axiora Blogs.`,
+            url: `${siteUrl}/sub-category/${params.slug}`,
+        },
+    };
 }
 
 export default async function SubCategoryPage({ params }: SubCategoryPageProps) {

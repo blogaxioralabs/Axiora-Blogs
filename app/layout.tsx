@@ -5,9 +5,17 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Toaster } from 'sonner';
-import { getOrganizationSchema } from '@/lib/seo-utils'; // අලුත් ෆයිල් එකෙන්
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { getOrganizationSchema } from '@/lib/seo-utils';
+import WebVitalsReporter from '@/components/WebVitalsReporter';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  adjustFontFallback: true,
+});
 
 // --- 1. Mobile & Visual SEO (SXO - Search Experience Optimization) ---
 export const viewport: Viewport = {
@@ -117,8 +125,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="scroll-smooth">
       <head>
+        {/* --- DNS Preconnect for Critical Origins (Core Web Vitals LCP Boost) --- */}
+        <link rel="preconnect" href="https://oskbnnusqmdzysgtrovl.supabase.co" />
+        <link rel="dns-prefetch" href="https://oskbnnusqmdzysgtrovl.supabase.co" />
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.google-analytics.com" />
+        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        
         {/* --- GEO Tags for Local/International SEO --- */}
-        <meta name="geo.region" content="LK-1" /> {/* Western Province */}
+        <meta name="geo.region" content="LK-1" />
         <meta name="geo.placename" content="Colombo" />
         <meta name="geo.position" content="6.9271;79.8612" />
         <meta name="ICBM" content="6.9271, 79.8612" />
@@ -141,6 +160,13 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
             <Toaster richColors />
+            {/* --- Vercel Analytics & Speed Insights --- */}
+            <Analytics />
+            <SpeedInsights />
+            {/* --- Core Web Vitals → GA4 Reporter --- */}
+            <Suspense fallback={null}>
+              <WebVitalsReporter />
+            </Suspense>
         </div>
       </body>
     </html>

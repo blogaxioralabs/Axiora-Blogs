@@ -119,11 +119,21 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       };
     }
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
+    const description = `Explore world-class articles about ${category.name} on Axiora Blogs. Discover the latest insights, tutorials, research, and deep dives into ${category.name}.`;
     return {
-      title: `${category.name} Category`,
-      description: `Browse articles under the ${category.name} category on Axiora Blogs.`,
-       alternates: { 
-           canonical: `/category/${category.slug}`,
-       },
+      title: `${category.name} — Category | Axiora Blogs`,
+      description: description,
+      alternates: { canonical: `${siteUrl}/category/${category.slug}` },
+      openGraph: {
+        title: `${category.name} — Category | Axiora Blogs`,
+        description: description,
+        url: `${siteUrl}/category/${category.slug}`,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: `${category.name} — Category | Axiora Blogs`,
+        description: description,
+      },
     };
 }

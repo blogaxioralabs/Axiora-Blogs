@@ -1,3 +1,4 @@
+// app/author/[id]/page.tsx
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -13,13 +14,37 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const supabase = createClient();
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('full_name, avatar_url, bio')
     .eq('id', params.id)
     .single();
 
+  if (!profile) {
+    return { title: 'Author Not Found | Axiora Blogs' };
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
+  const authorName = profile.full_name || 'Axiora Author';
+  const description = profile.bio
+    ? profile.bio.substring(0, 155)
+    : `Read all articles written by ${authorName} on Axiora Blogs. Explore their latest insights and contributions to STEM and technology.`;
+
   return {
-    title: profile?.full_name ? `${profile.full_name} - Author Profile` : 'Author Profile',
-    description: `Read all articles written by ${profile?.full_name || 'this author'} on Axiora Blogs.`,
+    title: `${authorName} — Author Profile | Axiora Blogs`,
+    description: description,
+    alternates: { canonical: `${siteUrl}/author/${params.id}` },
+    openGraph: {
+      title: `${authorName} — Author | Axiora Blogs`,
+      description: description,
+      url: `${siteUrl}/author/${params.id}`,
+      type: 'profile',
+      images: profile.avatar_url ? [{ url: profile.avatar_url, width: 400, height: 400, alt: authorName }] : [],
+    },
+    twitter: {
+      card: 'summary',
+      title: `${authorName} — Author | Axiora Blogs`,
+      description: description,
+      images: profile.avatar_url ? [profile.avatar_url] : [],
+    },
   };
 }
 

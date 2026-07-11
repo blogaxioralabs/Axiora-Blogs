@@ -3,7 +3,8 @@
 import { createClient } from '@/lib/supabase/server'; 
 import PostCard from '@/components/PostCard';
 import type { Post } from '@/lib/types'; 
-import { BackButton } from '@/components/BackButton'; // <-- 1. Import the BackButton component
+import type { Metadata } from 'next';
+import { BackButton } from '@/components/BackButton';
 
 type SearchPageProps = {
     searchParams: {
@@ -32,6 +33,24 @@ async function searchPosts(query: string) {
     return data; 
 }
 // ----------------------------------------------------------------
+
+// --- SEO: generateMetadata for Search page ---
+export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
+    const query = searchParams.q;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
+    if (!query) {
+        return {
+            title: 'Search | Axiora Blogs',
+            description: 'Search across our extensive library of STEM articles, news, and insights on Axiora Blogs.',
+        };
+    }
+    return {
+        title: `Search: "${query}" — Results | Axiora Blogs`,
+        description: `Search results for "${query}" on Axiora Blogs. Find articles, news, and insights about ${query} in STEM and technology.`,
+        robots: { index: false, follow: true },
+        alternates: { canonical: `${siteUrl}/search` },
+    };
+}
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const query = searchParams.q;

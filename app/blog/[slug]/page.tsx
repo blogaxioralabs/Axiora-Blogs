@@ -88,36 +88,45 @@ export async function generateMetadata(
     
     const authorNameForMeta = postForMeta.author_name || postForMeta.profiles?.full_name || 'Axiora Labs';
 
+    const updatedAt = (postForMeta as any).updated_at || postForMeta.created_at;
     return {
       title: postForMeta.title,
       description: description,
       keywords: keywords,
-      authors: [{ name: authorNameForMeta }], 
+      authors: [{ name: authorNameForMeta }],
       openGraph: {
-          title: `${postForMeta.title} | Axiora Blogs`, 
-          description: description, 
-          url: url, 
+          title: `${postForMeta.title} | Axiora Blogs`,
+          description: description,
+          url: url,
           siteName: 'Axiora Blogs',
-          images: [ { url: getOptimizedImageUrl(imageUrl), width: 1200, height: 630, alt: postForMeta.title, } ], 
-          locale: 'en_US', 
+          images: [{ url: getOptimizedImageUrl(imageUrl), width: 1200, height: 630, alt: postForMeta.title }],
+          locale: 'en_US',
           type: 'article',
-          publishedTime: postForMeta.created_at, 
-          authors: [authorNameForMeta], 
+          publishedTime: postForMeta.created_at,
+          modifiedTime: updatedAt,
+          authors: [authorNameForMeta],
           tags: postForMeta.tags?.map(tag => tag.name),
           ...(postForMeta.categories?.name && { section: postForMeta.categories.name }),
       },
-      twitter: { 
-          card: 'summary_large_image', 
-          title: `${postForMeta.title} | Axiora Blogs`, 
-          description: description, 
-          images: [getOptimizedImageUrl(imageUrl)], 
+      twitter: {
+          card: 'summary_large_image',
+          title: `${postForMeta.title} | Axiora Blogs`,
+          description: description,
+          images: [getOptimizedImageUrl(imageUrl)],
       },
-      alternates: { 
+      alternates: {
           canonical: url,
           languages: {
               'en-US': url,
           }
-      }, 
+      },
+      other: {
+        'article:published_time': postForMeta.created_at,
+        'article:modified_time': updatedAt,
+        'article:author': authorNameForMeta,
+        'article:section': postForMeta.categories?.name || 'Technology',
+        'article:tag': postForMeta.tags?.map(t => t.name).join(', ') || '',
+      },
     }
 }
 

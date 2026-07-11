@@ -4,7 +4,8 @@ export const revalidate = 300;
 import { AnimatedPostCard } from '@/components/AnimatedPostCard';
 import { notFound } from 'next/navigation';
 import { BackButton } from '@/components/BackButton';
-import type { Post } from '@/lib/types'; // Import Post type
+import type { Post } from '@/lib/types';
+import type { Metadata } from 'next';
 
 type TagPageProps = {
   params: { slug: string };
@@ -126,5 +127,19 @@ export default async function TagPage({ params }: TagPageProps) {
     );
 }
 
-// Optional: Add generateMetadata if needed for SEO
-// export async function generateMetadata({ params }: TagPageProps) { ... }
+// --- SEO: generateMetadata for Tag pages ---
+export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
+    const { tag } = await getTagData(params.slug);
+    if (!tag) return { title: 'Tag Not Found' };
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://axiorablogs.com';
+    return {
+        title: `#${tag.name} - Articles & Insights | Axiora Blogs`,
+        description: `Explore all articles tagged with #${tag.name} on Axiora Blogs. Discover the latest insights, tutorials, and deep dives about ${tag.name}.`,
+        alternates: { canonical: `${siteUrl}/tag/${params.slug}` },
+        openGraph: {
+            title: `#${tag.name} — Tag | Axiora Blogs`,
+            description: `Browse articles tagged #${tag.name} on Axiora Blogs.`,
+            url: `${siteUrl}/tag/${params.slug}`,
+        },
+    };
+}
