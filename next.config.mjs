@@ -12,6 +12,7 @@ const nextConfig = {
         remotePatterns: [
             { protocol: 'https', hostname: 'source.unsplash.com' },
             { protocol: 'https', hostname: 'axiorablogs.com' },
+            { protocol: 'https', hostname: 'images.unsplash.com' },
             { protocol: 'https', hostname: 'lh3.googleusercontent.com' }, 
             { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
             { protocol: 'https', hostname: 'YOUR_SUPABASE_PROJECT_ID.supabase.co' },

@@ -290,7 +290,7 @@ export function TopPicksAndAuthors({ initialPosts, trendingNews, authors = [], t
         <section className="w-full mt-12 mb-8">
             <div className="flex items-center gap-2 mb-6">
                 <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
-                    Top Articles
+                    Top Articles & Top News
                 </h2>
             </div>
             <p className="text-muted-foreground text-sm md:text-base mb-8">

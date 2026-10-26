@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { FeaturedPostSlider } from '@/components/FeaturedPostSlider';
+
+// === IMPORTING THE ADVANCED NEW HERO ===
+import NewHero from '@/components/NewHero';
+
 import { HeroSection } from '@/components/HeroSection';
 import { StemHighlights } from '@/components/StemHighlights';
 import ModernNewsCard from '@/components/ModernNewsCard';
@@ -60,12 +64,17 @@ export default function HomePageClient({
 
   return (
     <>
+      {/* 1. THE ADVANCED NEW HERO (WOW Effect & Professional) */}
+      <NewHero />
+
+      {/* 2. THE EXISTING Bento Grid (Articles/News) */}
       <HeroSection latestPosts={initialPosts.slice(0, 3)} latestNews={trendingNews} />
+      
       <StemHighlights />
       
       <main className="container pb-12 space-y-16 md:space-y-24 mt-20 md:mt-24">
         
-        {/* === FEATURED POSTS SLIDER (Full Width, Sidebar Removed) === */}
+        {/* === FEATURED POSTS SLIDER === */}
         <section>
           <div className="w-full">
             <div className="space-y-1 mb-8">
@@ -83,7 +92,7 @@ export default function HomePageClient({
           <LatestNewsSection news={trendingNews} />
         )}
 
-        {/* === TOP TRENDING TOPICS (Latest Posts එකට කලින් දැම්මා) === */}
+        {/* === TOP TRENDING TOPICS === */}
         {trendingTopics && trendingTopics.length > 0 && (
           <TopTrendingTopics topics={trendingTopics} />
         )}
@@ -132,7 +141,7 @@ export default function HomePageClient({
             authors={authors || []}
         />
 
-        {/* 5. Ad Banners */}
+        {/* Ad Banners */}
         <section className="py-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <AdBanner />
@@ -140,7 +149,7 @@ export default function HomePageClient({
             </div>
         </section>
         <SocialCommunitySection />
-<NewsletterSection />
+        <NewsletterSection />
       </main>
     </>
   );
