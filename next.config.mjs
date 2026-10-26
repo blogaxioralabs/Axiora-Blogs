@@ -59,7 +59,7 @@ const nextConfig = {
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                             "img-src 'self' data: blob: https: http:",
                             "font-src 'self' https://fonts.gstatic.com",
-                            "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://*.vercel-insights.com https://api.indexnow.org https://generativelanguage.googleapis.com",
+                            "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://*.vercel-insights.com https://api.indexnow.org https://generativelanguage.googleapis.com https://api.cloudinary.com",
                             "media-src 'self'",
                             "frame-src 'self' https://www.padumainduwara.me https://padumainduwara.me http://localhost:3000",
                             "frame-ancestors 'self' https://www.padumainduwara.me https://padumainduwara.me http://localhost:3000",
