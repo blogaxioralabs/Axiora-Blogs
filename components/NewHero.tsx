@@ -3,17 +3,17 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, PlayCircle, Cpu, Globe, Rocket } from 'lucide-react';
 import Link from 'next/link';
+import { TargetAndTransition } from "framer-motion";
 
-// 3D Floating Animation Settings
-const floatingAnimation = (delay: number) => ({
-  y: ['-15px', '15px'],
+const floatingAnimation = (delay: number): TargetAndTransition => ({
+  y: ["-10px", "10px"],
   transition: {
-    duration: 4,
+    duration: 2,
     repeat: Infinity,
-    repeatType: 'reverse' as const,
-    ease: 'easeInOut',
-    delay: delay,
-  },
+    repeatType: "reverse",
+    ease: "easeInOut",
+    delay: delay
+  }
 });
 
 export default function NewHero() {
